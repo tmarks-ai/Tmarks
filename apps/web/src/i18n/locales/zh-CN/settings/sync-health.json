@@ -1,0 +1,43 @@
+{
+  "syncHealth": {
+    "description": "查看云端同步数据概览与扩展状态",
+    "card": {
+      "cloud": "云端数据",
+      "cloudDesc": "服务器上各实体数据总量",
+      "lastUpdate": "最近更新",
+      "lastUpdateDesc": "最近一次数据更新时间",
+      "extension": "扩展状态",
+      "extensionNotDetected": "未检测到扩展",
+      "extensionConnected": "已连接扩展",
+      "extensionStatusUnavailable": "已连接，状态不可用",
+      "extensionChecking": "检测中...",
+      "extensionPendingOps": "{{count}} 项待同步",
+      "extensionLastSync": "最近同步：{{time}}",
+      "extensionNeverSynced": "从未同步",
+      "modeLocalOnly": "仅本地",
+      "modeCloudSync": "云端同步",
+      "modePaused": "已暂停"
+    },
+    "table": {
+      "entity": "实体",
+      "cloudCount": "云端数量",
+      "lastUpdate": "最后更新",
+      "never": "暂无"
+    },
+    "entity": {
+      "bookmarks": "书签",
+      "bookmark_folders": "文件夹",
+      "tags": "标签",
+      "tab_groups": "标签页组",
+      "tab_group_items": "标签页项"
+    },
+    "action": {
+      "triggerSync": "刷新同步状态",
+      "syncing": "刷新中..."
+    },
+    "message": {
+      "syncTriggered": "已刷新同步状态",
+      "syncFailed": "刷新失败"
+    }
+  }
+}

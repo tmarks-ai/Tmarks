@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- 静态占位:路由挂载后由 useDocumentTitle 覆盖为本地化标题,避免英文用户看到中文闪现。 -->
+    <title>TMarks</title>
+    <!-- Pre-paint theme init (self-hosted; CSP script-src 'self' forbids inline):
+         reads the persisted preference before first paint to kill the dark-mode
+         flash. Mirrors shared/ui-theme.ts's class/data contract. -->
+    <script src="/theme-init.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '../fonts.css';
+@import './base.css';
+@import './workspace.css';
+@import './workspace-primitives.css';

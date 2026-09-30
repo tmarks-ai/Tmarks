@@ -1,0 +1,3 @@
+# Single-page landing: every path serves the page (shared deep links like
+# /install should land on the page, not a hoster 404).
+/* /index.html 200

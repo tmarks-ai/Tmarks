@@ -1,0 +1,111 @@
+/**
+ * Options 页面主题变量(tmarks 品牌主题)
+ * 移植自旧版 themes/tmarks.css 的 --tab-options-* 段。
+ * 由 styles.css @import;:root=亮色,:root.dark=暗色。
+ */
+
+:root {
+  --tab-options-page-bg-from: oklch(0.96 0.008 95);
+  --tab-options-page-bg-via: oklch(0.98 0.005 95);
+  --tab-options-page-bg-to: oklch(0.96 0.008 95);
+  --tab-options-card-bg: oklch(1 0 0 / 0.9);
+  --tab-options-card-border: oklch(0.9 0.01 95 / 0.7);
+
+  --tab-options-hero-gradient-from: oklch(0.62 0.14 39 / 0.15);
+  --tab-options-hero-gradient-via: oklch(0.58 0.15 45 / 0.1);
+  --tab-options-hero-gradient-to: oklch(0.55 0.16 50 / 0.2);
+
+  --tab-options-pill-bg: oklch(0.62 0.14 39 / 0.1);
+  --tab-options-pill-text: oklch(0.5 0.12 45);
+
+  --tab-options-title: var(--foreground);
+  --tab-options-text: var(--muted-foreground);
+  --tab-options-text-muted: oklch(0.55 0.01 95);
+
+  --tab-options-button-border: oklch(0.85 0.01 95 / 0.8);
+  --tab-options-button-text: oklch(0.35 0.02 95);
+  --tab-options-button-hover-bg: oklch(0.94 0.01 95);
+  --tab-options-button-primary-bg: var(--primary);
+  --tab-options-button-primary-hover: color-mix(in oklch, var(--primary) 88%, black);
+  --tab-options-button-primary-text: var(--primary-foreground);
+
+  --tab-options-modal-overlay: oklch(0 0 0 / 0.4);
+  --tab-options-modal-border: oklch(0.62 0.14 39 / 0.2);
+  --tab-options-modal-bg: oklch(1 0 0 / 0.95);
+  --tab-options-modal-topbar-from: oklch(0.62 0.14 39);
+  --tab-options-modal-topbar-via: oklch(0.58 0.15 45);
+  --tab-options-modal-topbar-to: oklch(0.55 0.16 50);
+
+  --tab-options-danger-border: oklch(0.6 0.18 25 / 0.35);
+  --tab-options-danger-bg: oklch(0.9 0.06 25 / 0.8);
+  --tab-options-danger-text: oklch(0.45 0.15 25);
+
+  --tab-options-switch-thumb: oklch(1 0 0);
+  --tab-options-switch-track-off: oklch(0.9 0.01 95);
+
+  --tab-options-cache-metric-emerald-border: oklch(0.55 0.1 55 / 0.25);
+  --tab-options-cache-metric-emerald-bg: oklch(0.55 0.1 55 / 0.08);
+  --tab-options-cache-metric-emerald-value: var(--foreground);
+  --tab-options-cache-metric-emerald-label: oklch(0.2 0 0 / 0.7);
+  --tab-options-cache-metric-blue-border: oklch(0.55 0.12 50 / 0.25);
+  --tab-options-cache-metric-blue-bg: oklch(0.55 0.12 50 / 0.08);
+  --tab-options-cache-metric-blue-value: var(--foreground);
+  --tab-options-cache-metric-blue-label: oklch(0.2 0 0 / 0.7);
+  --tab-options-cache-metric-slate-border: oklch(0.6 0.01 95 / 0.6);
+  --tab-options-cache-metric-slate-bg: oklch(0.97 0.005 95 / 0.7);
+  --tab-options-cache-metric-slate-value: oklch(0.45 0.02 95);
+  --tab-options-cache-metric-slate-label: oklch(0.55 0.01 95);
+  --tab-options-cache-sync-bg: oklch(0.55 0.14 42);
+  --tab-options-cache-sync-hover: oklch(0.5 0.14 42);
+  --tab-options-cache-sync-text: oklch(1 0 0);
+
+  --tab-options-tag-bg: oklch(0.97 0.005 95);
+  --tab-options-tag-border: oklch(0.88 0.007 97);
+  --tab-options-progress-bar-bg: oklch(0.92 0.01 95);
+  --tab-options-progress-bar-fill: oklch(0.55 0.12 50);
+  --tab-options-danger-hover-bg: oklch(0.6 0.18 25 / 0.1);
+  --tab-options-danger-hover-border: oklch(0.6 0.18 25 / 0.5);
+  --tab-options-danger-hover-text: oklch(0.5 0.18 25);
+  --tab-options-modal-close-text: oklch(1 0 0 / 0.7);
+  --tab-options-modal-close-hover-border: oklch(1 0 0 / 0.2);
+  --tab-options-modal-close-hover-text: oklch(1 0 0);
+}
+
+:root.dark {
+  --tab-options-page-bg-from: oklch(0.1 0.01 50);
+  --tab-options-page-bg-via: oklch(0.12 0.01 50);
+  --tab-options-page-bg-to: oklch(0.1 0.01 50);
+  --tab-options-card-bg: oklch(0.16 0.01 50 / 0.9);
+  --tab-options-card-border: oklch(0.25 0.01 55 / 0.6);
+
+  --tab-options-pill-bg: oklch(0.62 0.14 45 / 0.16);
+  --tab-options-pill-text: oklch(0.82 0.1 50);
+
+  --tab-options-title: oklch(1 0 0);
+  --tab-options-text: oklch(0.85 0.01 95);
+  --tab-options-text-muted: oklch(0.65 0.01 95);
+
+  --tab-options-button-border: oklch(0.4 0.01 55 / 0.7);
+  --tab-options-button-text: oklch(0.92 0.01 95);
+  --tab-options-button-hover-bg: oklch(0.22 0.01 55);
+
+  --tab-options-modal-border: oklch(0.62 0.14 45 / 0.25);
+  --tab-options-modal-bg: oklch(0.14 0.01 50 / 0.95);
+
+  --tab-options-danger-border: oklch(0.6 0.18 25 / 0.4);
+  --tab-options-danger-bg: oklch(0.6 0.18 25 / 0.1);
+  --tab-options-danger-text: oklch(0.88 0.08 25);
+
+  --tab-options-switch-track-off: oklch(0.3 0.01 55);
+
+  --tab-options-tag-bg: oklch(0.2 0.01 55);
+  --tab-options-tag-border: oklch(0.3 0.01 55);
+  --tab-options-progress-bar-bg: oklch(0.25 0.01 55);
+  --tab-options-progress-bar-fill: oklch(0.65 0.1 55);
+  --tab-options-danger-hover-bg: oklch(0.6 0.18 25 / 0.1);
+  --tab-options-danger-hover-border: oklch(0.6 0.18 25 / 0.5);
+  --tab-options-danger-hover-text: oklch(0.88 0.08 25);
+  --tab-options-modal-close-text: oklch(1 0 0 / 0.7);
+  --tab-options-modal-close-hover-border: oklch(1 0 0 / 0.2);
+  --tab-options-modal-close-hover-text: oklch(1 0 0);
+}

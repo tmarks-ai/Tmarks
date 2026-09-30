@@ -1,0 +1,33 @@
+{
+  "name": "tmarks-new",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "TMarks — AI bookmarking, tab-group collection and cross-device sync (pnpm monorepo: web app, MV3 browser extension, Cloudflare Worker backend).",
+  "author": "TMarks Team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tmarks-ai/tmarks-new.git"
+  },
+  "type": "module",
+  "packageManager": "pnpm@10.28.1",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "check:code-size": "node scripts/check-code-size.mjs --fail",
+    "release:check": "node scripts/check-release-safety.mjs"
+  },
+  "devDependencies": {
+    "turbo": "catalog:"
+  },
+  "pnpm": {
+    "overrides": {
+      "nanoid@<3.3.18": "3.3.18"
+    }
+  }
+}

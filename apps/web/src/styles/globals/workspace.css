@@ -1,0 +1,223 @@
+﻿.tmarks-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.app-chrome-container {
+  width: min(100%, 1920px);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 1.75vw, 2rem);
+}
+
+.tmarks-scrollbar:hover,
+.tmarks-scrollbar:focus-within,
+.tmarks-scrollbar[data-scroll-visible='true'] {
+  scrollbar-color: color-mix(in oklch, var(--muted-foreground), transparent 55%) transparent;
+}
+
+.tmarks-scrollbar::-webkit-scrollbar {
+  width: 0.375rem;
+  height: 0.375rem;
+}
+
+.tmarks-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tmarks-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: transparent;
+}
+
+.tmarks-scrollbar:hover::-webkit-scrollbar-thumb,
+.tmarks-scrollbar:focus-within::-webkit-scrollbar-thumb,
+.tmarks-scrollbar[data-scroll-visible='true']::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--muted-foreground), transparent 55%);
+}
+
+.workspace-shell {
+  width: 100%;
+  height: 100%;
+  padding: 0.75rem 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .workspace-shell {
+    padding-inline: 0.75rem;
+  }
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(0.875rem, 1.2vw, 1.5rem);
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+@media (min-width: 1280px) {
+  .workspace-grid--both {
+    --workspace-primary-panel: clamp(13.5rem, 15vw, 17rem);
+    --workspace-secondary-panel: clamp(13rem, 14vw, 16rem);
+    grid-template-columns: var(--workspace-primary-panel) minmax(0, 1fr) var(--workspace-secondary-panel);
+  }
+
+  .workspace-grid--both.workspace-grid--primary-tags {
+    grid-template-columns: var(--workspace-secondary-panel) minmax(0, 1fr) var(--workspace-primary-panel);
+  }
+
+  .workspace-grid--left {
+    grid-template-columns:
+      clamp(12rem, 11.5vw, 15rem)
+      minmax(0, 1fr);
+  }
+
+  .workspace-grid--tab-groups.workspace-grid--left {
+    grid-template-columns:
+      clamp(16rem, 15.3vw, 20rem)
+      minmax(0, 1fr);
+  }
+
+  .workspace-grid--right {
+    grid-template-columns:
+      minmax(0, 1fr)
+      clamp(18rem, 17.5vw, 24rem);
+  }
+}
+
+.workspace-toolbar-surface {
+  box-shadow:
+    0 10px 24px hsl(0 0% 0% / 0.07),
+    0 1px 3px hsl(0 0% 0% / 0.04);
+}
+
+.workspace-bookmark-scroll {
+  --workspace-fade-height: clamp(2rem, 3vw, 3.5rem);
+  position: relative;
+}
+
+.workspace-bookmark-scroll::before {
+  content: '';
+  position: sticky;
+  top: 0;
+  z-index: var(--layer-raised);
+  display: block;
+  height: var(--workspace-fade-height);
+  margin-bottom: calc(var(--workspace-fade-height) * -1);
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--background) 0%,
+    oklch(from var(--background) l c h / 0.88) 38%,
+    oklch(from var(--background) l c h / 0) 100%
+  );
+}
+
+.workspace-bookmark-content {
+  padding-top: clamp(1.25rem, 1.4vw, 1.625rem);
+}
+
+.workspace-bookmark-scroll:has(+ .workspace-pagination-overlay) {
+  padding-bottom: 2.5rem;
+}
+
+.workspace-pagination-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: var(--layer-sticky);
+  display: flex;
+  justify-content: center;
+}
+
+.workspace-pagination-footer {
+  pointer-events: auto;
+  display: inline-flex;
+  max-width: calc(100% - 1rem);
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: oklch(from var(--card) l c h / 0.88);
+  padding: 0.375rem;
+  box-shadow:
+    0 14px 32px oklch(0 0 0 / 0.1),
+    0 1px 3px oklch(0 0 0 / 0.06);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+}
+
+.pagination-count-button {
+  background: oklch(from var(--card) l c h / 0.62);
+  color: var(--foreground);
+}
+
+.pagination-count-button:hover {
+  background: oklch(from var(--card) l c h / 0.78);
+}
+
+.pagination-size-picker {
+  background: var(--popover);
+  color: var(--popover-foreground);
+}
+
+.pagination-size-wheel {
+  display: grid;
+  max-height: 8.25rem;
+  min-width: 4.25rem;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+}
+
+.pagination-size-wheel::-webkit-scrollbar {
+  display: none;
+}
+
+.pagination-size-option {
+  height: 2rem;
+  scroll-snap-align: center;
+  border-radius: 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pagination-size-option:hover,
+.pagination-size-option--active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.pagination-footer-button {
+  background: oklch(from var(--card) l c h / 0.55);
+}
+
+.pagination-footer-button:hover:not(:disabled) {
+  background: oklch(from var(--card) l c h / 0.75);
+}
+
+.folder-scroll {
+  contain: layout paint;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.folder-scroll::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+
+.bookmark-selected-surface {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

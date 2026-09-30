@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <title>TMarks — 想到，即刻收纳</title>
+    <meta name="description" content="TMarks · AI 书签与标签页收纳系统。一键收藏书签、收纳整窗标签页、留存网页快照，两级文件夹与标签双重组织，AI 替你整理一切。由 Cloudflare 边缘驱动。" />
+    <meta name="theme-color" content="#0f0e15" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="canonical" href="%SITE_URL%/" />
+    <!-- First-viewport fonts preloaded (crossorigin is required: fonts are
+         fetched in CORS mode even same-origin, a plain preload misses). -->
+    <link rel="preload" href="/fonts/space-grotesk-600.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jetbrains-mono-600.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- %SITE_URL% is replaced at build time (vite.config.ts). Build with
+         SITE_URL=https://your-domain so og:image / og:url become absolute —
+         social crawlers do not resolve relative URLs. -->
+    <meta property="og:site_name" content="TMarks" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:title" content="TMarks — 想到，即刻收纳" />
+    <meta property="og:description" content="一键书签 · 标签页收纳 · 网页快照 · AI 智能整理。由 Cloudflare 边缘驱动。" />
+    <meta property="og:image" content="%SITE_URL%/og-cover.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="TMarks — 想到，即刻收纳" />
+    <meta name="twitter:description" content="一键书签 · 标签页收纳 · 网页快照 · AI 智能整理。由 Cloudflare 边缘驱动。" />
+    <meta name="twitter:image" content="%SITE_URL%/og-cover.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- No <noscript> fallback: the build prerenders the full App markup into
+         #root, so the page is fully readable without JavaScript. -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

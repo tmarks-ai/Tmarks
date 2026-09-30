@@ -1,0 +1,77 @@
+{
+  "folder": {
+    "createTitle": "新建文件夹",
+    "namePlaceholder": "输入文件夹名称",
+    "createConfirm": "创建"
+  },
+  "search": {
+    "placeholder": "搜索标签页组...",
+    "noResults": "没有找到匹配的标签页组",
+    "tryDifferent": "尝试使用不同的关键词搜索 \"{{query}}\""
+  },
+  "empty": {
+    "title": "还没有标签页组",
+    "description": "使用浏览器扩展收集标签页，或者在这里创建新的标签页组来开始管理您的标签页"
+  },
+  "sort": {
+    "label": "排序",
+    "created": "按创建时间",
+    "title": "按标题",
+    "count": "按标签页数量",
+    "byCreated": "按创建时间",
+    "byTitle": "按标题",
+    "byCount": "按标签页数量"
+  },
+  "batch": {
+    "enter": "批量操作",
+    "exit": "退出批量操作",
+    "selected": "已选择 {{count}} 个",
+    "pleaseSelect": "请选择标签页",
+    "currentView": "当前视图共 {{count}} 个",
+    "selectAll": "全选当前视图 ({{count}})",
+    "deselectAll": "取消",
+    "delete": "删除",
+    "pin": "固定",
+    "unpin": "取消固定",
+    "todo": "待办",
+    "untodo": "取消待办",
+    "archive": "归档",
+    "unarchive": "取消归档",
+    "export": "导出"
+  },
+  "filter": {
+    "label": "状态筛选",
+    "all": "全部",
+    "todo": "待办",
+    "pinned": "固定",
+    "archived": "已归档",
+    "noResults": "没有符合该状态的标签页",
+    "clear": "清除筛选"
+  },
+  "trash": {
+    "title": "回收站",
+    "empty": "回收站是空的",
+    "restore": "恢复",
+    "deletePermanently": "永久删除",
+    "backToTabGroups": "返回标签页收纳",
+    "deletedAt": "删除于 {{time}}"
+  },
+  "moveToFolder": {
+    "title": "移动到文件夹",
+    "description": "选择目标文件夹，将\"{{title}}\"移动到该位置",
+    "rootFolder": "根目录",
+    "noFolders": "没有可用的文件夹",
+    "confirm": "确定移动"
+  },
+  "sidebar": {
+    "title": "标签页组",
+    "allGroups": "全部标签页组",
+    "noGroups": "暂无分组"
+  },
+  "tree": {
+    "expand": "展开",
+    "collapse": "收起",
+    "moreActions": "更多操作"
+  },
+  "pageTitle": "标签页组"
+}

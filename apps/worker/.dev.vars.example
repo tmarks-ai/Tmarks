@@ -1,0 +1,6 @@
+# Generate a real value before starting the worker. The placeholder below is
+# rejected at startup: it is published in this repo, so anyone could use it to
+# forge tokens. Generate one with: openssl rand -base64 32
+JWT_SECRET="REPLACE-ME-run-openssl-rand-base64-32"
+ALLOW_REGISTRATION="false"
+ENVIRONMENT="development"

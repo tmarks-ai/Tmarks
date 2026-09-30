@@ -1,0 +1,16 @@
+{
+  "api": {
+    "description": "网页端使用独立登录。API 密钥仅用于连接浏览器扩展。请立即复制完整密钥；它仅显示一次。",
+    "createKey": "创建标签页 API 密钥",
+    "newKey": "新 API 密钥",
+    "createTitle": "创建扩展密钥",
+    "keysTitle": "你的 API 密钥",
+    "loading": "正在加载 API 密钥...",
+    "loadFailed": "加载 API 密钥失败",
+    "noKeys": "还没有 API 密钥。",
+    "revokeConfirm": "撤销后使用该密钥的扩展将立即断开连接，且不可恢复。确定撤销“{{name}}”？",
+    "statusActive": "生效中",
+    "statusRevoked": "已撤销",
+    "statusExpired": "已过期"
+  }
+}

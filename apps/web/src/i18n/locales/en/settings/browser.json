@@ -1,0 +1,46 @@
+{
+  "browser": {
+    "download": {
+      "title": "Get the Browser Extension",
+      "description": "The extension is open-source and self-hosted; build it from the repository (see EXTENSION.md)",
+      "goToLanding": "Go to Landing Page",
+      "tip": "💡 After building, follow the steps below to install and configure the API Key. Only Chrome/Chromium is supported (Chrome, Edge, Brave, Opera, 360, QQ, Sogou, etc.)"
+    },
+    "popup": {
+      "title": "Popup Permission",
+      "description": "Allow TMarks to open popups to use the \"Open All Tabs\" feature.",
+      "howTo": "How to allow popups?",
+      "step1": "1. Click the TMarks extension icon in the toolbar.",
+      "step2": "2. In the popup, go to the \"Tab Groups\" view and click \"Open All Tabs\".",
+      "step3": "3. When the browser blocks the popup, click the address bar popup-block icon.",
+      "step4": "4. Select \"Always allow popups from this site\" and click Done."
+    },
+    "install": {
+      "title": "Installation Steps",
+      "description": "Follow these steps to install the browser extension",
+      "step1Title": "Build",
+      "step1Desc": "Clone the repository and run pnpm --filter @tmarks/tab build; output lands in apps/tab/dist",
+      "step2Title": "Open Extensions",
+      "step2Desc": "Open chrome://extensions (or edge://extensions) in your browser",
+      "step3Title": "Enable Developer Mode",
+      "step3Desc": "Toggle \"Developer mode\" in the top-right corner",
+      "step4Title": "Load Unpacked",
+      "step4Desc": "Click \"Load unpacked\" and select apps/tab/dist",
+      "step5Title": "Configure API Key",
+      "step5Desc": "Open the extension options and paste your API Key from Settings",
+      "step6Title": "Pin the Icon",
+      "step6Desc": "Click the puzzle icon in the toolbar and pin TMarks"
+    },
+    "faq": {
+      "title": "FAQ",
+      "iconNotFound": "Q: Can't find the extension icon after installation?",
+      "iconNotFoundAnswer": "A: Click the puzzle icon on the right side of browser toolbar, find TMarks extension and click the pin button to show it in toolbar.",
+      "howToGetApiKey": "Q: How to get API Key?",
+      "howToGetApiKeyAnswer": "A: Create a new API Key in the \"API\" tab of General Settings and copy it to the extension configuration.",
+      "supportedBrowsers": "Q: Which browsers are supported?",
+      "supportedBrowsersAnswer": "A: Only the Chrome/Chromium version is provided. It works on Chromium-based browsers like Chrome, Edge, Brave, Opera, 360, QQ and Sogou.",
+      "whereToView": "Where to view saved tab groups?",
+      "whereToViewAnswer": "View and manage all saved tab groups on the \"Tab Groups\" page of TMarks website."
+    }
+  }
+}

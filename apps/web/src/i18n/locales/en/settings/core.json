@@ -1,0 +1,33 @@
+{
+  "pageTitle": "Settings",
+  "general": {
+    "theme": "Theme",
+    "themeDesc": "Switch between light, dark, or system appearance",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark"
+  },
+  "description": "Configure app behavior and user experience",
+  "tabs": {
+    "basic": "General",
+    "appearance": "Appearance",
+    "browser": "Browser",
+    "api": "API",
+    "data": "Data Export",
+    "sync-health": "Sync Health",
+    "share": "Public sharing"
+  },
+  "navGroup": {
+    "preferences": "Preferences",
+    "data": "Data",
+    "connect": "Connect"
+  },
+  "action": {
+    "logout": "Logout",
+    "revoke": "Revoke"
+  },
+  "message": {
+    "saveSuccess": "Settings saved",
+    "saveFailed": "Failed to save"
+  }
+}

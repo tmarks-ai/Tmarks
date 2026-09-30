@@ -1,0 +1,29 @@
+{
+  "name": "@tmarks/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "TMarks Cloudflare Worker entry: Hono API backend serving the SPA static assets.",
+  "author": "TMarks Team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tmarks-ai/tmarks-new.git"
+  },
+  "main": "src/worker.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "type-check": "tsc --noEmit",
+    "lint": "echo \"@tmarks/worker: lint skipped\"",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@tmarks/backend-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

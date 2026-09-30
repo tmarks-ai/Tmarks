@@ -1,0 +1,40 @@
+# TMarks landing — Cloudflare Pages headers
+# Vite bundles JS/CSS to /assets/* (self). Inline `style="..."` attributes
+# (mock tilt/bar heights) and the <noscript> reveal fallback require
+# 'unsafe-inline' for styles. Fonts are self-hosted from /fonts — no
+# third-party origins are needed.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/favicon.svg
+  Cache-Control: public, max-age=86400
+
+/favicon.ico
+  Cache-Control: public, max-age=86400
+
+/apple-touch-icon.png
+  Cache-Control: public, max-age=86400
+
+/og-cover.png
+  Cache-Control: public, max-age=86400
+
+/pixiu-hero.svg
+  Cache-Control: public, max-age=86400
+
+/pixiu-manifesto.svg
+  Cache-Control: public, max-age=86400
+
+/pixiu-footer.svg
+  Cache-Control: public, max-age=86400

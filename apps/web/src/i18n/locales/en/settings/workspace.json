@@ -1,0 +1,25 @@
+{
+  "workspace": {
+    "nav": {
+      "title": "Bookmark Workspace",
+      "description": "Choose whether folders or tags drive the main navigation.",
+      "folders": {
+        "title": "Folders first"
+      },
+      "tags": {
+        "title": "Tags first"
+      }
+    },
+    "pageSize": {
+      "title": "Items per page",
+      "description": "Set the default pagination size for the bookmark workspace."
+    },
+    "auxPanel": {
+      "title": "Secondary panel",
+      "description": "Control how the non-primary filter appears in the workspace.",
+      "right": "Right panel",
+      "drawer": "Drawer",
+      "hidden": "Hidden"
+    }
+  }
+}

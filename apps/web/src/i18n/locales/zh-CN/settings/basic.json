@@ -1,0 +1,48 @@
+{
+  "basic": {
+    "accountInfo": {
+      "title": "账户信息",
+      "description": "查看您的账户基本信息"
+    },
+    "username": "用户名",
+    "changePassword": {
+      "title": "修改密码",
+      "description": "修改后所有会话将被吊销，需重新登录",
+      "current": "当前密码",
+      "new": "新密码",
+      "confirm": "确认新密码",
+      "submit": "修改密码",
+      "mismatch": "两次输入的新密码不一致",
+      "tooShort": "新密码至少 8 个字符",
+      "changed": "密码已修改，全部会话已吊销，请重新登录"
+    }
+  },
+  "appearance": {
+    "view": {
+      "title": "默认视图",
+      "description": "选择书签列表的默认显示方式",
+      "card": "图文卡片",
+      "minimal": "精简列表"
+    },
+    "tagLayout": {
+      "title": "标签布局",
+      "description": "选择书签工作台中标签筛选的排列方式",
+      "grid": "网格",
+      "masonry": "瀑布流"
+    },
+    "sort": {
+      "title": "默认排序",
+      "description": "设置进入书签工作台时默认使用的排序方式",
+      "created": "创建时间",
+      "updated": "更新时间",
+      "popular": "热门"
+    },
+    "density": {
+      "title": "密度",
+      "description": "调整书签列表的紧凑程度",
+      "compact": "紧凑",
+      "normal": "标准",
+      "comfortable": "宽松"
+    }
+  }
+}

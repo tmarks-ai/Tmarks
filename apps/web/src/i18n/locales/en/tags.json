@@ -1,0 +1,59 @@
+{
+  "title": "Tags",
+  "filter": {
+    "searchPlaceholder": "Search tags..."
+  },
+  "empty": {
+    "description": "Click + to create your first tag",
+    "noMatch": "No matching tags found"
+  },
+  "sort": {
+    "byUsage": "Sort by bookmark count (click to switch to popularity)",
+    "byClicks": "Sort by popularity (click to switch to name)",
+    "byName": "Sort by name (click to switch to bookmark count)"
+  },
+  "section": {
+    "selected": "Selected",
+    "related": "Related",
+    "all": "All tags"
+  },
+  "action": {
+    "manage": "Manage tags",
+    "create": "New tag",
+    "edit": "Edit tag",
+    "delete": "Delete tag",
+    "deleting": "Deleting...",
+    "save": "Save",
+    "saving": "Saving...",
+    "done": "Done"
+  },
+  "form": {
+    "namePlaceholder": "Enter tag name",
+    "nameLabel": "Tag name",
+    "colorLabel": "Color",
+    "noColor": "No color",
+    "editHint": "Adjust tag name and color, only affects this tag."
+  },
+  "manage": {
+    "title": "Tag Management",
+    "description": "Edit tag names or delete unwanted tags",
+    "noTags": "No tags yet",
+    "noTagsHint": "Click + button to create your first tag",
+    "bookmarkCount": "{{count}} bookmarks",
+    "noBookmarks": "No bookmarks"
+  },
+  "confirm": {
+    "deleteTitle": "Delete Tag",
+    "deleteMessage": "Are you sure you want to delete tag \"{{name}}\"? Associated bookmarks will not be deleted."
+  },
+  "message": {
+    "updateSuccess": "Tag updated successfully",
+    "deleteSuccess": "Tag deleted successfully",
+    "createSuccess": "Tag created successfully"
+  },
+  "status": {
+    "loading": "Loading...",
+    "loadFailed": "Failed to load tags",
+    "retry": "Retry"
+  }
+}

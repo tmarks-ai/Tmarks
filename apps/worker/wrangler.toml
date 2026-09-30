@@ -1,0 +1,136 @@
+name = "tmarks"
+main = "src/worker.ts"
+compatibility_date = "2026-08-27"
+
+# Custom domain: add `routes = [{ pattern = "your-domain.example.com", custom_domain = true }]`
+# (requires a token with Zone:DNS:Edit), or bind the domain manually in the
+# dashboard under Workers & Pages > tmarks > Settings > Triggers > Custom Domains.
+workers_dev = true
+
+# Hourly drain for the durable R2-deletion outbox (storage_cleanup_jobs):
+# failed/best-effort R2 deletions are retried by the worker's scheduled()
+# handler (see src/worker.ts). Hourly matches the outbox's 1h backoff cap;
+# cron triggers are free on the Workers plans. Without this trigger the
+# outbox is never drained and retried R2 deletes leak permanently (R5-2).
+[triggers]
+crons = ["0 * * * *"]
+
+# D1 database (single source of truth: ../../sql — numbered domain files, see sql/README.md)
+# Fill in the database_id of your own D1 database before deploying
+# (`wrangler d1 create tmarks-db` prints it). Migrations apply via
+# `wrangler d1 migrations apply tmarks-db`.
+[[d1_databases]]
+binding = "DB"
+database_name = "tmarks-db"
+database_id = "<your-d1-database-id>"
+migrations_dir = "../../sql"
+
+[observability]
+# Workers Logs:结构化 JSON 请求日志(console.log/error 按严重级归集),
+# 生产前开启是官方基线;采样率 1.0 = 全量,流量放大后再下调。
+enabled = true
+head_sampling_rate = 1.0
+
+[[r2_buckets]]
+binding = "SNAPSHOTS"
+bucket_name = "tmarks-snapshots"
+
+# 前端静态资源(同源托管,SPA)。directory 相对本 wrangler.toml。
+# run_worker_first = ["/api/*"]:只有 /api/* 走 Worker(后端),其余由 Static Assets + SPA fallback 处理。
+[assets]
+directory = "../web/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+# Native rate limiters (free). Official schema since Wrangler 4.36:
+# top-level [[ratelimits]] with a REQUIRED namespace_id (unique positive-integer
+# string, account-wide — shared counters if reused) and [ratelimits.simple].
+# The legacy `[[unsafe.bindings]] type="ratelimit"` form with options/mode/period
+# is rejected by the versions API (error 10021) — do not revert to it.
+# When these bindings are present, login/register/refresh/public-share and
+# API-key rate limiting cost ZERO D1 reads/writes — without them, sustained
+# hostile probing (~40k/day) would write 200k+ D1 rows and exhaust the free
+# tier's 100k rows/day by itself. If your account/region cannot deploy them,
+# delete the blocks — the app falls back to D1-backed limiting automatically
+# (see DEPLOY.md「D1 免费额度账本」).
+
+# Shared limiter: every key (per-IP, per-key, global fallback) at 60/min.
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+[ratelimits.simple]
+limit = 60
+period = 60
+
+# Dedicated limiter for public asset reads (favicons/covers, /api/public/assets).
+# MUST stay separate from RATE_LIMITER: a cold-cache bookmark grid bursts
+# 100-200 image requests, far past the shared 60/min — reusing it would 429
+# every card. Without this binding the route falls back to the D1 dual bucket
+# (see lib/api-key/rate-limit-binding.ts).
+[[ratelimits]]
+name = "ASSET_RATE_LIMITER"
+namespace_id = "1002"
+[ratelimits.simple]
+limit = 600
+period = 60
+
+# High-quota limiter for `*:global` unauthenticated buckets (login/register/
+# share spray bounds, intended 120-600/min). MUST stay separate from
+# RATE_LIMITER: the shared 60/min rate would clamp every global bucket into a
+# deployment-wide lockout that a single pacing attacker IP can hold open.
+# Without this binding the global buckets fall back to the D1 limiter with
+# their real configured limits (see lib/api-key/rate-limit-binding.ts).
+[[ratelimits]]
+name = "GLOBAL_RATE_LIMITER"
+namespace_id = "1003"
+[ratelimits.simple]
+limit = 600
+period = 60
+
+[vars]
+ENVIRONMENT = "production"
+# Registration is disabled unless explicitly "true" (register.ts fails 403).
+# There is no seed user: bootstrap the first account with
+#   wrangler deploy --var ALLOW_REGISTRATION:true
+# then deploy again without it (single-user product). See DEPLOY.md 3.4.
+# ALLOW_REGISTRATION = "false"
+JWT_ACCESS_TOKEN_EXPIRES_IN = "1h"
+JWT_REFRESH_TOKEN_EXPIRES_IN = "30d"
+# Password hashing work factor. Defaults to 100000 — the Workers runtime
+# hard-caps PBKDF2 at 100k iterations and throws NotSupportedError above it,
+# so DO NOT raise this on Workers. Values outside [100000, 2000000] fall back
+# to the default; only non-Workers (local Node) runtimes can use higher values.
+# PBKDF2_ITERATIONS = "100000"
+# Comma-separated origins allowed credentialed CORS access (see backend-core
+# middleware/cors.ts). The browser extension does NOT need to be listed here:
+# its fetches run from an extension context covered by manifest host_permissions
+# (<all_urls>), which bypass CORS entirely. Local web dev (localhost:5173/3000)
+# is allowed by the middleware defaults. The web app is same-origin to this worker.
+# Add real cross-origin web clients here only if you host the web app elsewhere, e.g.:
+# CORS_ALLOWED_ORIGINS = "https://app.example.com,chrome-extension://<your-ext-id>"
+CORS_ALLOWED_ORIGINS = ""
+
+# -- Production overrides ----------------------------------------------------
+# Deploy with `--env production` and fill in the real resource IDs above/under
+# this section. See `wrangler deploy --env production`.
+#
+# [env.production]
+# [env.production.vars]
+# CORS_ALLOWED_ORIGINS = "chrome-extension://YOUR_EXTENSION_ID"
+# ENVIRONMENT = "production"
+# JWT_ACCESS_TOKEN_EXPIRES_IN = "1h"
+# JWT_REFRESH_TOKEN_EXPIRES_IN = "30d"
+#
+# [[env.production.d1_databases]]
+# binding = "DB"
+# database_name = "tmarks-db"
+# database_id = "<production-d1-database-id>"
+#
+# [[env.production.r2_buckets]]
+# binding = "SNAPSHOTS"
+# bucket_name = "tmarks-snapshots"
+
+# Secrets (do NOT commit). Provide via:
+#   wrangler secret put JWT_SECRET
+# or for local dev, create .dev.vars with:
+#   JWT_SECRET="..."

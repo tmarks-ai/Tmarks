@@ -1,0 +1,29 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "stream",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "type-check": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "lint": {},
+    "@tmarks/backend-core#build": {
+      "outputs": []
+    },
+    "@tmarks/ai#build": {
+      "outputs": []
+    },
+    "@tmarks/contracts#build": {
+      "outputs": []
+    },
+    "@tmarks/worker#build": {
+      "outputs": []
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "@tmarks/tab",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "TMarks browser extension (Manifest V3): one-click bookmark saving, tab collection, page snapshots and sync.",
+  "author": "TMarks Team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tmarks-ai/tmarks-new.git"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run --config vitest.config.ts",
+    "package:zip": "node scripts/zip-dist.mjs",
+    "lint": "echo \"@tmarks/tab: lint skipped\""
+  },
+  "dependencies": {
+    "@radix-ui/react-select": "catalog:",
+    "@tmarks/ai": "workspace:*",
+    "@tmarks/contracts": "workspace:*",
+    "clsx": "catalog:",
+    "dexie": "catalog:",
+    "dexie-react-hooks": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwind-merge": "catalog:",
+    "zustand": "catalog:"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@types/chrome": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "fake-indexeddb": "^6.2.5",
+    "tailwindcss": "catalog:",
+    "tw-animate-css": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

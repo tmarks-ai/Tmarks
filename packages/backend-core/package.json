@@ -1,0 +1,34 @@
+{
+  "name": "@tmarks/backend-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "TMarks API runtime: Hono routes, D1 repositories, auth, sync and import/export.",
+  "author": "TMarks Team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tmarks-ai/tmarks-new.git"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "echo \"@tmarks/backend-core: lint skipped\""
+  },
+  "dependencies": {
+    "@tmarks/contracts": "workspace:*",
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

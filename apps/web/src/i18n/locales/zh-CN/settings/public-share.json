@@ -1,0 +1,24 @@
+{
+  "share": {
+    "description": "使用同一套书签工作台界面，创建一个只读公开页面。",
+    "enabled": "开启公开分享",
+    "enabledHint": "拥有链接的人可以浏览你的实时书签；编辑和私有操作不会显示。",
+    "slug": "公开链接标识",
+    "slugPlaceholder": "my-bookmarks",
+    "slugInvalid": "链接标识只能包含小写字母、数字和连字符，且至少 8 个字符。",
+    "slugRotateWarning": "清空链接标识并保存会生成新的随机链接，原链接立即失效。",
+    "pageTitle": "页面标题",
+    "pageTitlePlaceholder": "我的书签",
+    "pageDescription": "页面说明",
+    "pageDescriptionPlaceholder": "给访客的一段简短介绍",
+    "save": "保存分享设置",
+    "saving": "保存中...",
+    "saved": "已保存",
+    "saveFailed": "保存失败",
+    "publicView": "公开页面",
+    "copyLink": "复制链接",
+    "copied": "已复制",
+    "openLink": "打开",
+    "linkDisabled": "开启分享后会生成公开链接。"
+  }
+}

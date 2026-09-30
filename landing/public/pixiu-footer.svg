@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" width="150" height="150" role="img" aria-label="貔貅">
+  <title>貔貅 · TMarks</title>
+  <defs>
+    <!-- right half of the face; mirrored for the left half -->
+    <g id="half">
+      <!-- horn -->
+      <path d="M75 40 C 90 32 102 26 116 18" fill="none" stroke="#f3ede2" stroke-width="3" stroke-linecap="round"/>
+      <!-- ear -->
+      <path d="M82 46 C 86 38 96 36 104 42" fill="none" stroke="#f3ede2" stroke-width="3" stroke-linecap="round"/>
+      <!-- brow ridge -->
+      <path d="M75 56 C 84 54 92 55 100 58" fill="none" stroke="#f3ede2" stroke-width="3" stroke-linecap="round"/>
+      <!-- eye gem -->
+      <circle cx="91" cy="66" r="5" fill="#f43d3f"/>
+      <!-- cheek whiskers -->
+      <path d="M75 88 C 90 86 106 86 120 84" fill="none" stroke="#f3ede2" stroke-width="2.4" stroke-linecap="round" opacity="0.8"/>
+      <path d="M75 95 C 88 95 102 95 114 97" fill="none" stroke="#f3ede2" stroke-width="2.4" stroke-linecap="round" opacity="0.8"/>
+    </g>
+  </defs>
+  <!-- medallion ring -->
+  <circle cx="75" cy="75" r="70" fill="none" stroke="#f3ede2" stroke-width="1.4" opacity="0.3"/>
+  <!-- centered muzzle -->
+  <path d="M75 78 C 70 84 70 93 75 97 C 80 93 80 84 75 78 Z" fill="none" stroke="#f3ede2" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="75" cy="91" r="2" fill="#f3ede2"/>
+  <!-- mirrored halves -->
+  <use href="#half"/>
+  <use href="#half" transform="matrix(-1 0 0 1 150 0)"/>
+</svg>

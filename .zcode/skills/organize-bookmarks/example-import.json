@@ -1,0 +1,44 @@
+{
+  "bookmarks": [
+    {
+      "title": "Tokio 官方文档",
+      "url": "https://tokio.rs/tokio/tutorial",
+      "description": "Rust 异步运行时的官方教程",
+      "folderPath": [
+        "开发",
+        "Rust"
+      ],
+      "tags": [
+        "rust",
+        "异步",
+        "文档"
+      ]
+    },
+    {
+      "title": "Cloudflare Workers 文档",
+      "url": "https://developers.cloudflare.com/workers/",
+      "description": null,
+      "folderPath": [
+        "开发",
+        "云平台"
+      ],
+      "tags": [
+        "cloudflare",
+        "serverless",
+        "文档"
+      ]
+    },
+    {
+      "title": "色彩理论入门",
+      "url": "https://example.com/color-theory",
+      "folderPath": [
+        "设计",
+        "设计基础"
+      ],
+      "tags": [
+        "色彩",
+        "构图"
+      ]
+    }
+  ]
+}

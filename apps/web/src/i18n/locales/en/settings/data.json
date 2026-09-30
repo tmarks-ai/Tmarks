@@ -1,0 +1,13 @@
+{
+  "data": {
+    "export": {
+      "title": "Export data"
+    },
+    "exportFeature": {
+      "description": "Download a Markdown copy of your bookmarks."
+    },
+    "bookmarksAvailable": "{{count}} bookmarks available",
+    "loading": "Loading bookmarks...",
+    "loadFailed": "Failed to load bookmark data"
+  }
+}

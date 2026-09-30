@@ -1,0 +1,9 @@
+{
+  "detail": {
+    "backToList": "返回列表",
+    "groupNotFound": "标签页组不存在",
+    "loadFailed": "加载标签页组失败",
+    "retry": "重试",
+    "showArchived": "显示已归档"
+  }
+}

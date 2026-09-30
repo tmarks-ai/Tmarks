@@ -1,0 +1,24 @@
+{
+  "share": {
+    "description": "Create one read-only public page using the same bookmark workspace UI.",
+    "enabled": "Enable public sharing",
+    "enabledHint": "Anyone with the link can browse your live bookmarks. Editing and private controls stay unavailable.",
+    "slug": "Public link",
+    "slugPlaceholder": "my-bookmarks",
+    "slugInvalid": "The link slug can only contain lowercase letters, digits and hyphens, and must be at least 8 characters.",
+    "slugRotateWarning": "Saving with an empty slug mints a fresh random link — the previous link stops working immediately.",
+    "pageTitle": "Page title",
+    "pageTitlePlaceholder": "My bookmarks",
+    "pageDescription": "Page description",
+    "pageDescriptionPlaceholder": "A short introduction for visitors",
+    "save": "Save sharing settings",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "saveFailed": "Failed to save",
+    "publicView": "Public page",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "openLink": "Open",
+    "linkDisabled": "Enable sharing to create a public link."
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@tmarks/ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "TMarks AI package: single-bookmark classification prompts, parsing and fallbacks.",
+  "author": "TMarks Team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tmarks-ai/tmarks-new.git"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./url": {
+      "types": "./src/url.ts",
+      "default": "./src/url.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "echo \"@tmarks/ai: lint skipped\""
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

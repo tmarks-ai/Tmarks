@@ -1,0 +1,46 @@
+{
+  "browser": {
+    "download": {
+      "title": "获取浏览器扩展",
+      "description": "扩展为开源自托管,按仓库 EXTENSION.md 从源码构建",
+      "goToLanding": "前往落地页",
+      "tip": "💡 构建后按下方步骤安装并配置 API Key；目前仅提供 Chrome/Chromium 通用版本（Chrome、Edge、Brave、Opera、360、QQ、搜狗等）"
+    },
+    "popup": {
+      "title": "弹窗权限",
+      "description": "允许 TMarks 打开弹窗，以便使用\"一键打开全部标签页\"功能。",
+      "howTo": "如何允许弹窗？",
+      "step1": "1. 点击工具栏中的 TMarks 扩展图标。",
+      "step2": "2. 在弹窗中切换到\"标签收纳\"视图，点击\"一键打开全部标签页\"。",
+      "step3": "3. 浏览器拦截弹窗时，点击地址栏的弹窗拦截图标。",
+      "step4": "4. 选择\"始终允许此网站的弹窗\"，然后点击完成。"
+    },
+    "install": {
+      "title": "安装步骤",
+      "description": "按照以下步骤安装浏览器扩展",
+      "step1Title": "构建",
+      "step1Desc": "克隆仓库执行 pnpm --filter @tmarks/tab build，产物在 apps/tab/dist",
+      "step2Title": "打开扩展页",
+      "step2Desc": "在浏览器中打开 chrome://extensions（或 edge://extensions）",
+      "step3Title": "启用开发者模式",
+      "step3Desc": "在右上角开启\"开发者模式\"开关",
+      "step4Title": "加载已解压扩展",
+      "step4Desc": "点击\"加载已解压的扩展程序\"，选择 apps/tab/dist",
+      "step5Title": "配置 API Key",
+      "step5Desc": "打开扩展选项页，粘贴设置中的 API Key",
+      "step6Title": "固定图标",
+      "step6Desc": "点击工具栏拼图图标,将 TMarks 固定到工具栏"
+    },
+    "faq": {
+      "title": "常见问题",
+      "iconNotFound": "Q: 插件安装后找不到图标？",
+      "iconNotFoundAnswer": "A: 点击浏览器工具栏右侧的拼图图标，找到 TMarks 插件并点击固定按钮，图标就会显示在工具栏上。",
+      "howToGetApiKey": "Q: 如何获取 API Key？",
+      "howToGetApiKeyAnswer": "A: 在通用设置的\"API\"标签页中创建一个新的 API Key 并复制到插件配置中。",
+      "supportedBrowsers": "Q: 插件支持哪些浏览器？",
+      "supportedBrowsersAnswer": "A: 目前仅提供 Chrome/Chromium 版本，支持 Chrome、Edge、Brave、Opera、360、QQ、搜狗等 Chromium 内核浏览器。",
+      "whereToView": "保存的标签页组在哪里查看？",
+      "whereToViewAnswer": "在 TMarks 网站的\"标签页\"页面可以查看和管理所有保存的标签页组。"
+    }
+  }
+}

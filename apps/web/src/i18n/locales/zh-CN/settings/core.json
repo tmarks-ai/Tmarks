@@ -1,0 +1,33 @@
+{
+  "pageTitle": "设置",
+  "general": {
+    "theme": "主题",
+    "themeDesc": "切换浅色、深色或跟随系统外观",
+    "themeSystem": "跟随系统",
+    "themeLight": "浅色",
+    "themeDark": "深色"
+  },
+  "description": "配置应用的通用行为和用户体验",
+  "tabs": {
+    "basic": "通用",
+    "appearance": "外观",
+    "browser": "浏览器",
+    "api": "API",
+    "data": "数据导出",
+    "sync-health": "同步健康",
+    "share": "公开分享"
+  },
+  "navGroup": {
+    "preferences": "偏好",
+    "data": "数据",
+    "connect": "接入"
+  },
+  "action": {
+    "logout": "登出",
+    "revoke": "吊销"
+  },
+  "message": {
+    "saveSuccess": "设置已保存",
+    "saveFailed": "保存失败"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "button": {
+    "confirm": "确定",
+    "cancel": "取消",
+    "close": "关闭",
+    "retry": "重试",
+    "copied": "已复制"
+  },
+  "dialog": {
+    "confirm": "确认",
+    "notice": "提示"
+  },
+  "errorBoundary": {
+    "title": "出错了",
+    "description": "未知错误",
+    "refresh": "刷新"
+  },
+  "message": {
+    "operationFailed": "操作失败",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "sessionExpired": "登录已过期，请重新登录",
+    "forbidden": "没有权限执行此操作",
+    "notFound": "资源不存在或已被删除",
+    "conflict": "操作冲突，请刷新后重试",
+    "rateLimited": "操作过于频繁，请稍后再试",
+    "timeout": "请求超时，请检查网络后重试",
+    "networkError": "网络连接失败，请检查后重试",
+    "serverError": "服务器暂时不可用，请稍后再试"
+  },
+  "pagination": {
+    "prev": "上一页",
+    "next": "下一页",
+    "total": "{{count}} 条"
+  },
+  "nav": {
+    "bookmarks": "书签",
+    "tabGroups": "标签页",
+    "settings": "设置",
+    "smartBookmarkManagement": "智能书签管理",
+    "manageTabGroups": "管理收纳的标签页组",
+    "switchToBookmarks": "切换到书签",
+    "switchToTabGroups": "切换到标签页组",
+    "toggleDarkMode": "切换到暗色模式",
+    "toggleLightMode": "切换到亮色模式",
+    "userSettings": "{{username}} - 点击进入设置"
+  },
+  "action": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "confirm": "确认",
+    "loading": "加载中...",
+    "saving": "保存中...",
+    "deleting": "删除中...",
+    "done": "完成",
+    "ok": "确定",
+    "login": "登录",
+    "copyError": "复制错误信息"
+  },
+  "a11y": {
+    "drawerDescription": "侧边面板，包含当前工作区的导航与筛选项。"
+  }
+}

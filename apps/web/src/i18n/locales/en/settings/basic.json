@@ -1,0 +1,48 @@
+{
+  "basic": {
+    "accountInfo": {
+      "title": "Account Information",
+      "description": "View your account details"
+    },
+    "username": "Username",
+    "changePassword": {
+      "title": "Change Password",
+      "description": "All sessions are revoked after changing; you will need to log in again",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "submit": "Change password",
+      "mismatch": "The two new passwords do not match",
+      "tooShort": "New password must be at least 8 characters",
+      "changed": "Password changed; all sessions were revoked. Please log in again."
+    }
+  },
+  "appearance": {
+    "view": {
+      "title": "Default View",
+      "description": "Choose the default display mode for bookmark list",
+      "card": "Visual cards",
+      "minimal": "Compact list"
+    },
+    "tagLayout": {
+      "title": "Tag Layout",
+      "description": "Choose how tag filters are arranged in the bookmark workspace",
+      "grid": "Grid",
+      "masonry": "Masonry"
+    },
+    "sort": {
+      "title": "Default Sort",
+      "description": "Set the bookmark ordering used when you open the workspace",
+      "created": "Created",
+      "updated": "Updated",
+      "popular": "Popular"
+    },
+    "density": {
+      "title": "Density",
+      "description": "Adjust the compactness of the bookmark list",
+      "compact": "Compact",
+      "normal": "Normal",
+      "comfortable": "Comfortable"
+    }
+  }
+}

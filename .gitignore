@@ -1,0 +1,60 @@
+node_modules
+dist
+.turbo
+.wrangler
+.mf
+.deploy
+.selfhost
+release
+reports
+build
+coverage
+
+*.local
+.env
+.env.local
+.env.*.local
+.dev.vars
+.cf-deploy.env
+
+*.log
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# Agent / MCP tooling scratch output
+.playwright-mcp
+# ZCode 本地状态忽略,但 skills 是团队共享资产(契约有 CI 测试锁定)
+.zcode/*
+!.zcode/skills/
+
+# GUI test / manual QA scratch output
+gui-test-screenshots/
+ui-*.png
+r[0-9]-*.png
+
+# Ad-hoc debugging scratch files
+.tmp-*
+
+# Audit script outputs (regenerable records)
+.dead-exports.json
+apps/web/src/i18n/locales/.dead-keys.json
+
+# 内部审计报告:含部署 URL、账号 ID、令牌名、数据库 ID 等运维敏感信息
+# 不进公开仓库;工程价值保留在本地,未来脱敏后可考虑公开
+AUDIT-*.md
+
+tmarks-export-*.json
+
+# 部署令牌(别名也一并忽略,防止重命名后误提交)
+.cloudflare.env
+
+# 本地生产部署变体(含真实 database_id;文件头自述不入 git,见 DEPLOY.md)
+apps/worker/wrangler.prod-local.toml
+
+# 落地页整页截图(QA 抓取产物,可再生)
+landing-full-desktop.png
+
+# 种子数据生成器输出(scripts/gen-seed-bookmarks.mjs,可再生)
+seed-data.sql

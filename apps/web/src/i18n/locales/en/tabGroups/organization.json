@@ -1,0 +1,77 @@
+{
+  "folder": {
+    "createTitle": "New folder",
+    "namePlaceholder": "Enter folder name",
+    "createConfirm": "Create"
+  },
+  "search": {
+    "placeholder": "Search tab groups...",
+    "noResults": "No matching tab groups found",
+    "tryDifferent": "Try searching with different keywords \"{{query}}\""
+  },
+  "empty": {
+    "title": "No tab groups yet",
+    "description": "Use the browser extension to collect tabs, or create a new tab group here to start managing your tabs"
+  },
+  "sort": {
+    "label": "Sort",
+    "created": "By created time",
+    "title": "By title",
+    "count": "By tab count",
+    "byCreated": "By created time",
+    "byTitle": "By title",
+    "byCount": "By tab count"
+  },
+  "batch": {
+    "enter": "Batch mode",
+    "exit": "Exit batch mode",
+    "selected": "{{count}} selected",
+    "pleaseSelect": "Select tabs first",
+    "currentView": "{{count}} in this view",
+    "selectAll": "Select current view ({{count}})",
+    "deselectAll": "Deselect",
+    "delete": "Delete",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "todo": "Todo",
+    "untodo": "Untodo",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "export": "Export"
+  },
+  "filter": {
+    "label": "Status filter",
+    "all": "All",
+    "todo": "Todo",
+    "pinned": "Pinned",
+    "archived": "Archived",
+    "noResults": "No tabs match this status",
+    "clear": "Clear filter"
+  },
+  "trash": {
+    "title": "Trash",
+    "empty": "Trash is empty",
+    "restore": "Restore",
+    "deletePermanently": "Delete permanently",
+    "backToTabGroups": "Back to tab groups",
+    "deletedAt": "Deleted {{time}}"
+  },
+  "moveToFolder": {
+    "title": "Move to Folder",
+    "description": "Select target folder to move \"{{title}}\" to",
+    "rootFolder": "Root",
+    "noFolders": "No available folders",
+    "confirm": "Move"
+  },
+  "sidebar": {
+    "title": "Tab Groups",
+    "allGroups": "All tab groups",
+    "noGroups": "No groups"
+  },
+  "tree": {
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "moreActions": "More actions"
+  },
+  "pageTitle": "Tab groups"
+}

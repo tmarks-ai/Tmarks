@@ -1,0 +1,288 @@
+/**
+ * Popup / 通用主题变量(tmarks 品牌主题)
+ * 移植自旧版 aitmarks.v.0.0.1.0-tab 的 themes/tmarks.css。
+ * 由 styles.css @import;:root=亮色,:root.dark=暗色(themeManager 切 .dark)。
+ * --tab-popup-* / --tab-* / --tab-message-* / --tab-tag-* 全局可用。
+ */
+
+:root {
+  /* Popup 表面 */
+  --tab-popup-bg: var(--background);
+  --tab-popup-surface: var(--card);
+  --tab-popup-text: var(--foreground);
+  --tab-popup-text-muted: var(--muted-foreground);
+  --tab-popup-border: var(--border);
+  --tab-popup-border-strong: var(--input);
+
+  --tab-popup-primary-from: oklch(0.62 0.14 39);
+  --tab-popup-primary-via: oklch(0.58 0.15 45);
+  --tab-popup-primary-to: oklch(0.55 0.16 50);
+  --tab-popup-primary-text: oklch(1 0 0);
+  --tab-popup-primary-shadow: oklch(0.62 0.14 39 / 0.25);
+  --tab-popup-primary-shadow-strong: oklch(0.62 0.14 39 / 0.35);
+
+  --tab-popup-success-from: oklch(0.65 0.12 55);
+  --tab-popup-success-via: oklch(0.62 0.11 60);
+  --tab-popup-success-to: oklch(0.6 0.1 65);
+  --tab-popup-success-text: oklch(1 0 0);
+
+  /* Badge */
+  --tab-popup-badge-blue-bg: oklch(0.95 0.02 95);
+  --tab-popup-badge-blue-text: oklch(0.5 0.1 50);
+  --tab-popup-badge-amber-bg: oklch(0.96 0.03 75);
+  --tab-popup-badge-amber-text: oklch(0.55 0.14 45);
+  --tab-popup-badge-indigo-bg: oklch(0.94 0.02 85);
+  --tab-popup-badge-indigo-text: oklch(0.45 0.12 55);
+  --tab-popup-badge-purple-bg: oklch(0.95 0.02 80);
+  --tab-popup-badge-purple-text: oklch(0.5 0.1 60);
+
+  /* Section */
+  --tab-popup-section-gray-bg: var(--card);
+  --tab-popup-section-gray-border: var(--border);
+  --tab-popup-section-amber-border: oklch(0.85 0.1 65);
+  --tab-popup-section-amber-from: oklch(0.96 0.03 75);
+  --tab-popup-section-amber-to: oklch(0.97 0.02 85);
+  --tab-popup-section-amber-icon: oklch(0.65 0.14 50);
+  --tab-popup-section-amber-title: oklch(0.35 0.08 55);
+  --tab-popup-section-amber-text: oklch(0.55 0.12 50);
+  --tab-popup-section-amber-badge-bg: oklch(0.92 0.06 70);
+  --tab-popup-section-amber-badge-text: oklch(0.55 0.14 45);
+  --tab-popup-section-blue-border: oklch(0.82 0.08 90);
+  --tab-popup-section-blue-from: oklch(0.95 0.02 95);
+  --tab-popup-section-blue-to: oklch(0.96 0.015 90);
+  --tab-popup-section-blue-badge-bg: oklch(0.9 0.04 85);
+  --tab-popup-section-blue-badge-text: oklch(0.45 0.1 55);
+  --tab-popup-section-purple-border: oklch(0.82 0.08 80);
+  --tab-popup-section-purple-from: oklch(0.95 0.02 85);
+  --tab-popup-section-purple-to: oklch(0.96 0.015 90);
+  --tab-popup-section-purple-badge-bg: oklch(0.9 0.04 80);
+  --tab-popup-section-purple-badge-text: oklch(0.45 0.1 60);
+  --tab-popup-section-emerald-border: oklch(0.8 0.08 95);
+  --tab-popup-section-emerald-from: oklch(0.95 0.02 90);
+  --tab-popup-section-emerald-to: oklch(0.96 0.015 85);
+  --tab-popup-section-emerald-icon: oklch(0.55 0.12 55);
+  --tab-popup-section-emerald-badge-bg: oklch(0.9 0.05 80);
+  --tab-popup-section-emerald-badge-text: oklch(0.45 0.1 55);
+
+  /* Action */
+  --tab-popup-action-neutral-bg: var(--muted);
+  --tab-popup-action-neutral-bg-hover: var(--secondary);
+  --tab-popup-action-neutral-text: var(--muted-foreground);
+  --tab-popup-action-emerald-bg: oklch(0.95 0.02 90);
+  --tab-popup-action-emerald-bg-hover: oklch(0.9 0.04 85);
+  --tab-popup-action-emerald-text: oklch(0.45 0.1 55);
+  --tab-popup-action-emerald-active-bg: oklch(0.55 0.12 55);
+  --tab-popup-action-emerald-active-text: oklch(1 0 0);
+  --tab-popup-action-amber-bg: oklch(0.96 0.03 75);
+  --tab-popup-action-amber-bg-hover: oklch(0.92 0.06 70);
+  --tab-popup-action-amber-text: oklch(0.55 0.14 45);
+  --tab-popup-action-purple-bg: oklch(0.95 0.02 85);
+  --tab-popup-action-purple-bg-hover: oklch(0.9 0.04 80);
+  --tab-popup-action-purple-text: oklch(0.5 0.1 60);
+  --tab-popup-action-blue-bg: oklch(0.95 0.02 95);
+  --tab-popup-action-blue-bg-hover: oklch(0.9 0.04 90);
+  --tab-popup-action-blue-text: oklch(0.5 0.1 50);
+
+  /* Input */
+  --tab-popup-input-bg: var(--card);
+  --tab-popup-input-border: var(--input);
+  --tab-popup-input-text: var(--foreground);
+  --tab-popup-input-placeholder: var(--muted-foreground);
+  --tab-popup-input-focus-ring: var(--ring);
+  --tab-popup-input-focus-border: var(--ring);
+
+  /* Footer */
+  --tab-popup-footer-bg: var(--card);
+  --tab-popup-footer-border: var(--border);
+
+  /* Onboarding */
+  --tab-popup-onboarding-bg: oklch(0.15 0.02 50);
+  --tab-popup-onboarding-overlay: oklch(0.15 0.02 50 / 0.85);
+  --tab-popup-onboarding-radial-top: oklch(0.62 0.14 39 / 0.15);
+  --tab-popup-onboarding-radial-bottom: oklch(0.55 0.16 50 / 0.12);
+  --tab-popup-onboarding-card-bg: oklch(1 0 0 / 0.1);
+  --tab-popup-onboarding-card-border: oklch(1 0 0 / 0.1);
+  --tab-popup-onboarding-shadow: oklch(0.3 0.1 45 / 0.35);
+  --tab-popup-onboarding-subtle-border: oklch(1 0 0 / 0.08);
+  --tab-popup-onboarding-subtle-bg: oklch(1 0 0 / 0.06);
+  --tab-popup-onboarding-label: oklch(1 0 0 / 0.6);
+  --tab-popup-onboarding-desc: oklch(1 0 0 / 0.7);
+  --tab-popup-onboarding-tip-bg: oklch(1 0 0 / 0.12);
+  --tab-popup-onboarding-tip-text: oklch(1 0 0);
+
+  /* 保存位置栏 */
+  --tab-popup-save-target-bg: oklch(0.96 0.03 75);
+  --tab-popup-save-target-border: oklch(0.85 0.1 65);
+  --tab-popup-save-target-icon: oklch(0.65 0.14 50);
+  --tab-popup-save-target-text: var(--foreground);
+  --tab-popup-save-target-badge-bg: oklch(0.9 0.06 70);
+  --tab-popup-save-target-badge-text: oklch(0.55 0.14 45);
+
+  /* 滚动条 */
+  --tab-scrollbar-thumb: color-mix(in oklch, var(--foreground) 18%, transparent);
+  --tab-scrollbar-thumb-hover: color-mix(in oklch, var(--foreground) 28%, transparent);
+
+  /* 通用表面/文本(供 TabCollectionView 等用) */
+  --tab-surface: var(--card);
+  --tab-surface-muted: var(--muted);
+  --tab-text: var(--foreground);
+  --tab-text-muted: var(--muted-foreground);
+  --tab-border: var(--border);
+  --tab-border-strong: var(--input);
+  --tab-overlay: oklch(0 0 0 / 0.4);
+
+  /* 消息/提示 */
+  --tab-message-info-bg: oklch(0.95 0.02 95);
+  --tab-message-info-border: oklch(0.85 0.05 90);
+  --tab-message-info-icon-bg: oklch(0.9 0.04 90);
+  --tab-message-info-icon: oklch(0.5 0.1 50);
+  --tab-message-success-bg: oklch(0.95 0.03 65);
+  --tab-message-success-border: oklch(0.82 0.1 60);
+  --tab-message-success-icon-bg: oklch(0.88 0.08 60);
+  --tab-message-success-icon: oklch(0.5 0.12 55);
+  --tab-message-warning-bg: oklch(0.96 0.04 75);
+  --tab-message-warning-border: oklch(0.88 0.1 70);
+  --tab-message-warning-icon-bg: oklch(0.92 0.08 70);
+  --tab-message-warning-icon: oklch(0.6 0.14 50);
+  --tab-message-danger-bg: oklch(0.95 0.03 25);
+  --tab-message-danger-border: oklch(0.85 0.1 25);
+  --tab-message-danger-icon-bg: oklch(0.9 0.08 25);
+  --tab-message-danger-icon: oklch(0.5 0.18 25);
+
+  /* 标签 */
+  --tab-tag-selected-bg: oklch(0.62 0.14 39);
+  --tab-tag-selected-text: oklch(1 0 0);
+  --tab-tag-unselected-bg: var(--tab-surface);
+  --tab-tag-unselected-text: var(--tab-text);
+  --tab-tag-border: var(--tab-border);
+  --tab-tag-new-indicator: var(--tab-message-warning-icon);
+}
+
+:root.dark {
+  --tab-popup-bg: var(--background);
+  --tab-popup-surface: var(--card);
+  --tab-popup-text: var(--foreground);
+  --tab-popup-text-muted: var(--muted-foreground);
+  --tab-popup-border: oklch(1 0 0 / 0.12);
+  --tab-popup-border-strong: oklch(1 0 0 / 0.18);
+
+  --tab-scrollbar-thumb: color-mix(in oklch, var(--foreground) 25%, transparent);
+  --tab-scrollbar-thumb-hover: color-mix(in oklch, var(--foreground) 35%, transparent);
+
+  --tab-popup-badge-blue-bg: oklch(0.55 0.1 50 / 0.15);
+  --tab-popup-badge-blue-text: oklch(0.82 0.08 55);
+  --tab-popup-badge-amber-bg: oklch(0.62 0.14 45 / 0.16);
+  --tab-popup-badge-amber-text: oklch(0.85 0.1 55);
+  --tab-popup-badge-indigo-bg: oklch(0.5 0.1 60 / 0.16);
+  --tab-popup-badge-indigo-text: oklch(0.82 0.08 65);
+  --tab-popup-badge-purple-bg: oklch(0.5 0.1 65 / 0.16);
+  --tab-popup-badge-purple-text: oklch(0.85 0.08 70);
+
+  --tab-popup-section-gray-bg: oklch(0.16 0.01 50 / 0.6);
+  --tab-popup-section-gray-border: oklch(1 0 0 / 0.1);
+  --tab-popup-section-amber-border: oklch(0.62 0.14 45 / 0.35);
+  --tab-popup-section-amber-from: oklch(0.62 0.14 45 / 0.1);
+  --tab-popup-section-amber-to: oklch(0.16 0.01 50 / 0.6);
+  --tab-popup-section-amber-icon: oklch(0.85 0.1 55);
+  --tab-popup-section-amber-title: oklch(1 0 0);
+  --tab-popup-section-amber-text: oklch(0.85 0.08 60);
+  --tab-popup-section-amber-badge-bg: oklch(0.62 0.14 45 / 0.2);
+  --tab-popup-section-amber-badge-text: oklch(0.85 0.1 55);
+  --tab-popup-section-blue-border: oklch(0.55 0.1 50 / 0.35);
+  --tab-popup-section-blue-from: oklch(0.55 0.1 50 / 0.1);
+  --tab-popup-section-blue-to: oklch(0.16 0.01 50 / 0.6);
+  --tab-popup-section-blue-badge-bg: oklch(0.55 0.1 50 / 0.18);
+  --tab-popup-section-blue-badge-text: oklch(0.82 0.08 55);
+  --tab-popup-section-purple-border: oklch(0.5 0.1 65 / 0.35);
+  --tab-popup-section-purple-from: oklch(0.5 0.1 65 / 0.1);
+  --tab-popup-section-purple-to: oklch(0.16 0.01 50 / 0.6);
+  --tab-popup-section-purple-badge-bg: oklch(0.5 0.1 65 / 0.18);
+  --tab-popup-section-purple-badge-text: oklch(0.85 0.08 70);
+  --tab-popup-section-emerald-border: oklch(0.55 0.1 55 / 0.35);
+  --tab-popup-section-emerald-from: oklch(0.55 0.1 55 / 0.1);
+  --tab-popup-section-emerald-to: oklch(0.16 0.01 50 / 0.6);
+  --tab-popup-section-emerald-icon: oklch(0.82 0.08 60);
+  --tab-popup-section-emerald-badge-bg: oklch(0.55 0.1 55 / 0.18);
+  --tab-popup-section-emerald-badge-text: oklch(0.82 0.08 60);
+
+  --tab-popup-action-neutral-bg: oklch(1 0 0 / 0.06);
+  --tab-popup-action-neutral-bg-hover: oklch(1 0 0 / 0.1);
+  --tab-popup-action-neutral-text: oklch(0.85 0 0);
+  --tab-popup-action-emerald-bg: oklch(0.55 0.1 55 / 0.16);
+  --tab-popup-action-emerald-bg-hover: oklch(0.55 0.1 55 / 0.22);
+  --tab-popup-action-emerald-text: oklch(0.82 0.08 60);
+  --tab-popup-action-emerald-active-bg: oklch(0.55 0.1 55);
+  --tab-popup-action-emerald-active-text: oklch(1 0 0);
+  --tab-popup-action-amber-bg: oklch(0.62 0.14 45 / 0.16);
+  --tab-popup-action-amber-bg-hover: oklch(0.62 0.14 45 / 0.22);
+  --tab-popup-action-amber-text: oklch(0.85 0.1 55);
+  --tab-popup-action-purple-bg: oklch(0.5 0.1 65 / 0.16);
+  --tab-popup-action-purple-bg-hover: oklch(0.5 0.1 65 / 0.22);
+  --tab-popup-action-purple-text: oklch(0.85 0.08 70);
+  --tab-popup-action-blue-bg: oklch(0.55 0.1 50 / 0.16);
+  --tab-popup-action-blue-bg-hover: oklch(0.55 0.1 50 / 0.22);
+  --tab-popup-action-blue-text: oklch(0.82 0.08 55);
+
+  --tab-popup-input-bg: oklch(1 0 0 / 0.06);
+  --tab-popup-input-border: oklch(1 0 0 / 0.18);
+  --tab-popup-input-text: oklch(1 0 0);
+  --tab-popup-input-placeholder: oklch(1 0 0 / 0.55);
+  --tab-popup-input-focus-ring: oklch(0.68 0.14 45);
+  --tab-popup-input-focus-border: oklch(0.68 0.14 45);
+
+  --tab-popup-footer-bg: oklch(0.16 0.01 50 / 0.92);
+  --tab-popup-footer-border: oklch(1 0 0 / 0.1);
+
+  --tab-popup-success-from: oklch(0.55 0.1 55);
+  --tab-popup-success-via: oklch(0.52 0.09 60);
+  --tab-popup-success-to: oklch(0.5 0.08 65);
+  --tab-popup-success-text: oklch(1 0 0);
+
+  --tab-popup-save-target-bg: oklch(0.62 0.14 45 / 0.1);
+  --tab-popup-save-target-border: oklch(0.62 0.14 45 / 0.35);
+  --tab-popup-save-target-icon: oklch(0.85 0.1 55);
+  --tab-popup-save-target-text: oklch(0.92 0.01 95);
+  --tab-popup-save-target-badge-bg: oklch(0.62 0.14 45 / 0.2);
+  --tab-popup-save-target-badge-text: oklch(0.85 0.1 55);
+
+  --tab-message-info-bg: oklch(0.2 0.015 55);
+  --tab-message-info-border: oklch(0.35 0.02 55);
+  --tab-message-info-icon-bg: oklch(0.3 0.02 55);
+  --tab-message-info-icon: oklch(0.75 0.08 55);
+  --tab-message-success-bg: oklch(0.2 0.03 60);
+  --tab-message-success-border: oklch(0.4 0.1 55);
+  --tab-message-success-icon-bg: oklch(0.3 0.08 55);
+  --tab-message-success-icon: oklch(0.75 0.1 60);
+  --tab-message-warning-bg: oklch(0.22 0.04 55);
+  --tab-message-warning-border: oklch(0.45 0.1 55);
+  --tab-message-warning-icon-bg: oklch(0.35 0.08 55);
+  --tab-message-warning-icon: oklch(0.8 0.12 55);
+  --tab-message-danger-bg: oklch(0.2 0.03 25);
+  --tab-message-danger-border: oklch(0.45 0.12 25);
+  --tab-message-danger-icon-bg: oklch(0.35 0.1 25);
+  --tab-message-danger-icon: oklch(0.8 0.1 25);
+
+  --tab-tag-selected-bg: oklch(0.68 0.14 45);
+  --tab-tag-selected-text: oklch(0.1 0.01 50);
+  --tab-tag-unselected-bg: oklch(1 0 0 / 0.08);
+  --tab-tag-unselected-text: oklch(0.9 0.01 95);
+  --tab-tag-border: oklch(1 0 0 / 0.15);
+  --tab-tag-new-indicator: oklch(0.85 0.1 55);
+}
+
+/* 图层阶梯(低→高):header/footer < close-confirm < dialog < popover/message < confirm */
+:root {
+  --tab-popup-width: 380px;
+  --tab-popup-height: 600px;
+  /* 三个 fixed header 的实际占用高度,主区 padding、消息层与采集确认条
+     都锚定它——改 header 内边距/行高时同步改这一个 token。 */
+  --tab-popup-header-h: 60px;
+  /* 采集成功确认条(header 高 + ~120px 卡片)下压列表的预留量。 */
+  --tab-popup-close-reserve: 180px;
+  --tab-z-header: 20;
+  --tab-z-close-confirm: 40;
+  --tab-z-dialog: 50;
+  --tab-z-popover: 60;
+  --tab-z-message: 60;
+  --tab-z-confirm: 70;
+}

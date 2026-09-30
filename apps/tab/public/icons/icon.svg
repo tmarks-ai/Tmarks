@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- TMark 品牌图标:羊角锤(claw hammer)。横向锤头(右端 V 形羊角开口) + 居中下垂锤柄。
+透明背景,主色 oklch(0.55 0.16 50)。此为 128 画布含留白版本,供 16/32/48/128 PNG 与标签页使用。 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="TMark">
+  <defs>
+    <linearGradient id="tmark-orange" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="oklch(0.62 0.14 39)" />
+      <stop offset="1" stop-color="oklch(0.55 0.16 50)" />
+    </linearGradient>
+  </defs>
+  <path fill="url(#tmark-orange)" d="M28 24 L100 24 L100 32 L86 40 L100 48 L100 56 L72 56 L72 108 L56 108 L56 56 L28 56 Z" />
+</svg>

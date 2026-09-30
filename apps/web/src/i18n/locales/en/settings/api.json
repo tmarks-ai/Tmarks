@@ -1,0 +1,16 @@
+{
+  "api": {
+    "description": "Web uses independent login. API keys are only for connecting the browser extension. Copy the full key immediately; it is shown once.",
+    "createKey": "Create Tab API Key",
+    "newKey": "New API Key",
+    "createTitle": "Create extension key",
+    "keysTitle": "Your API keys",
+    "loading": "Loading API keys...",
+    "loadFailed": "Failed to load API keys",
+    "noKeys": "No API keys yet.",
+    "revokeConfirm": "Revoking immediately disconnects any extension using this key and cannot be undone. Revoke \"{{name}}\"?",
+    "statusActive": "Active",
+    "statusRevoked": "Revoked",
+    "statusExpired": "Expired"
+  }
+}

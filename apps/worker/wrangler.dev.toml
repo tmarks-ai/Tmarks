@@ -1,0 +1,94 @@
+# =============================================================================
+# 本地开发专用变体 — 绝对不要用这个文件部署!
+# (DO NOT `wrangler deploy --config wrangler.dev.toml`)
+#
+# 用途:未登录 wrangler(无 API token)也能本地起 dev 服务。去掉了远程
+# ratelimit binding,后端自动走 D1 限流兜底;其余块须与 wrangler.toml
+# 保持同步(单边漂移即不一致)。使用:cd apps/worker &&
+#   pnpm exec wrangler dev --config wrangler.dev.toml
+# 部署一律走 wrangler.toml(见 DEPLOY.md §7 本地开发)。
+# =============================================================================
+name = "tmarks"
+main = "src/worker.ts"
+compatibility_date = "2026-08-27"
+
+# Custom domain: add `routes = [{ pattern = "your-domain.example.com", custom_domain = true }]`
+# (requires a token with Zone:DNS:Edit), or bind the domain manually in the
+# dashboard under Workers & Pages > tmarks > Settings > Triggers > Custom Domains.
+workers_dev = true
+
+# D1 database (single source of truth: ../../sql — numbered domain files, see sql/README.md)
+# Fill in the database_id of your own D1 database before deploying
+# (`wrangler d1 create tmarks-db` prints it). Migrations apply via
+# `wrangler d1 migrations apply tmarks-db`.
+[[d1_databases]]
+binding = "DB"
+database_name = "tmarks-db"
+database_id = "<your-d1-database-id>"
+migrations_dir = "../../sql"
+
+[observability]
+# 与主 wrangler.toml 保持同步(dev 头注明的两条差异除外);本地 dev 下 inert。
+enabled = true
+head_sampling_rate = 1.0
+
+[[r2_buckets]]
+binding = "SNAPSHOTS"
+bucket_name = "tmarks-snapshots"
+
+# 前端静态资源(同源托管,SPA)。directory 相对本 wrangler.toml。
+# run_worker_first = ["/api/*"]:只有 /api/* 走 Worker(后端),其余由 Static Assets + SPA fallback 处理。
+[assets]
+directory = "../web/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+
+[vars]
+# dev 变体声明 development:cookies.ts 按此决定 Secure 标志(本地 http 也能登录)。
+ENVIRONMENT = "development"
+# Registration is disabled unless explicitly "true" (register.ts fails 403).
+# There is no seed user: bootstrap the first account with
+#   wrangler deploy --var ALLOW_REGISTRATION:true
+# then deploy again without it (single-user product). See DEPLOY.md 3.4.
+# ALLOW_REGISTRATION = "false"
+JWT_ACCESS_TOKEN_EXPIRES_IN = "1h"
+JWT_REFRESH_TOKEN_EXPIRES_IN = "30d"
+# Password hashing work factor. The production default is 100000 — the Workers
+# runtime hard-caps PBKDF2 at 100000 iterations, so anything higher throws
+# NotSupportedError at login. Values outside [100000, 2000000] fall back to the
+# default; runtimes without the cap may raise it.
+# PBKDF2_ITERATIONS = "100000"
+# Comma-separated origins allowed credentialed CORS access (see backend-core
+# middleware/cors.ts). The browser extension does NOT need to be listed here:
+# its fetches run from an extension context covered by manifest host_permissions
+# (<all_urls>), which bypass CORS entirely. Local web dev (localhost:5173/3000)
+# is allowed by the middleware defaults. The web app is same-origin to this worker.
+# Add real cross-origin web clients here only if you host the web app elsewhere, e.g.:
+# CORS_ALLOWED_ORIGINS = "https://app.example.com,chrome-extension://<your-ext-id>"
+CORS_ALLOWED_ORIGINS = ""
+
+# -- Production overrides ----------------------------------------------------
+# Deploy with `--env production` and fill in the real resource IDs above/under
+# this section. See `wrangler deploy --env production`.
+#
+# [env.production]
+# [env.production.vars]
+# CORS_ALLOWED_ORIGINS = "chrome-extension://YOUR_EXTENSION_ID"
+# ENVIRONMENT = "production"
+# JWT_ACCESS_TOKEN_EXPIRES_IN = "1h"
+# JWT_REFRESH_TOKEN_EXPIRES_IN = "30d"
+#
+# [[env.production.d1_databases]]
+# binding = "DB"
+# database_name = "tmarks-db"
+# database_id = "<production-d1-database-id>"
+#
+# [[env.production.r2_buckets]]
+# binding = "SNAPSHOTS"
+# bucket_name = "tmarks-snapshots"
+
+# Secrets (do NOT commit). Provide via:
+#   wrangler secret put JWT_SECRET
+# or for local dev, create .dev.vars with:
+#   JWT_SECRET="..."

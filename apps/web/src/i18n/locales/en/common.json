@@ -1,0 +1,65 @@
+{
+  "button": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "close": "Close",
+    "retry": "Retry",
+    "copied": "Copied"
+  },
+  "dialog": {
+    "confirm": "Confirm",
+    "notice": "Notice"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred.",
+    "refresh": "Refresh"
+  },
+  "message": {
+    "operationFailed": "Operation failed",
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Failed to delete",
+    "sessionExpired": "Session expired. Please sign in again.",
+    "forbidden": "You do not have permission to do that",
+    "notFound": "Resource not found or already deleted",
+    "conflict": "Operation conflict; refresh and retry",
+    "rateLimited": "Too many requests; try again soon",
+    "timeout": "Request timed out; check your network",
+    "networkError": "Network error; check your connection",
+    "serverError": "Server temporarily unavailable"
+  },
+  "pagination": {
+    "prev": "Previous",
+    "next": "Next",
+    "total": "{{count}} items"
+  },
+  "nav": {
+    "bookmarks": "Bookmarks",
+    "tabGroups": "Tab Groups",
+    "settings": "Settings",
+    "smartBookmarkManagement": "Smart Bookmark Management",
+    "manageTabGroups": "Manage Tab Groups",
+    "switchToBookmarks": "Switch to Bookmarks",
+    "switchToTabGroups": "Switch to Tab Groups",
+    "toggleDarkMode": "Switch to Dark Mode",
+    "toggleLightMode": "Switch to Light Mode",
+    "userSettings": "{{username}} - Go to Settings"
+  },
+  "action": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
+    "done": "Done",
+    "ok": "OK",
+    "login": "Login",
+    "copyError": "Copy Error"
+  },
+  "a11y": {
+    "drawerDescription": "Side panel containing navigation and filters for the current workspace."
+  }
+}

@@ -1,0 +1,120 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./themes/popup-tokens.css";
+@import "./themes/options-tokens.css";
+
+/* TMark 扩展语义色 token(tmarks 品牌主题:暖橙琥珀)。Tailwind v4 @theme 据此生成
+ * bg-primary / text-primary-foreground / border-border / text-muted-foreground
+ * / bg-card 等工具类。移植自旧版 themes/tmarks.css 亮色核心段。 */
+@theme {
+  --color-background: oklch(0.98 0.005 95);
+  --color-foreground: oklch(0.34 0.027 96);
+  --color-card: oklch(0.98 0.005 95);
+  --color-card-foreground: oklch(0.19 0.002 107);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.27 0.02 99);
+  --color-primary: oklch(0.62 0.14 39);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-secondary: oklch(0.92 0.014 93);
+  --color-secondary-foreground: oklch(0.43 0.018 99);
+  --color-muted: oklch(0.93 0.015 90);
+  --color-muted-foreground: oklch(0.61 0.008 97);
+  --color-accent: oklch(0.92 0.014 93);
+  --color-accent-foreground: oklch(0.27 0.02 99);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-destructive-foreground: oklch(1 0 0);
+  --color-border: oklch(0.88 0.007 97);
+  --color-input: oklch(0.76 0.016 98);
+  --color-ring: oklch(0.62 0.14 39);
+  --color-warning: oklch(0.72 0.16 55);
+  --color-warning-foreground: oklch(0.2 0.05 55);
+  --color-success: oklch(0.6 0.17 145);
+  --color-success-foreground: oklch(0.985 0 0);
+}
+
+/* 平面别名:移植组件用 var(--card)/var(--primary) 等,统一解析到 --color-*。
+ * 经 var() 间接引用,深色下 :root.dark 覆盖 --color-* 后自动跟随。 */
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --popover: var(--color-popover);
+  --popover-foreground: var(--color-popover-foreground);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-foreground);
+  --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-destructive-foreground);
+  --border: var(--color-border);
+  --input: var(--color-input);
+  --ring: var(--color-ring);
+}
+
+/* 暗色:themeManager 按 theme 偏好切换 .dark(auto=跟随系统,light=移除,dark=加上)。
+ * 未分层的 :root.dark 优先级高于分层的 @theme,覆盖浅色 token。 */
+:root.dark {
+  --color-background: oklch(0.12 0.01 50);
+  --color-foreground: oklch(0.92 0.01 95);
+  --color-card: oklch(0.16 0.01 50);
+  --color-card-foreground: oklch(0.95 0.005 95);
+  --color-popover: oklch(0.14 0.01 50);
+  --color-popover-foreground: oklch(0.95 0.005 95);
+  --color-primary: oklch(0.68 0.14 45);
+  --color-primary-foreground: oklch(0.1 0.01 50);
+  --color-secondary: oklch(0.25 0.015 55);
+  --color-secondary-foreground: oklch(0.92 0.01 95);
+  --color-muted: oklch(0.22 0.01 55);
+  --color-muted-foreground: oklch(0.65 0.01 95);
+  --color-accent: oklch(0.28 0.015 55);
+  --color-accent-foreground: oklch(0.95 0.005 95);
+  --color-destructive: oklch(0.6 0.18 25);
+  --color-destructive-foreground: oklch(0.95 0 0);
+  --color-border: oklch(0.3 0.01 55);
+  --color-input: oklch(0.35 0.015 55);
+  --color-ring: oklch(0.68 0.14 45);
+}
+
+html,
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* popup 浮卡:body 透明,由内部 rounded-2xl shadow-2xl 卡片承载背景(复刻旧版观感)。
+ * options 页保留全屏背景。 */
+body.popup-root {
+  background-color: transparent;
+}
+
+/* 键盘焦点统一可见样式(popup 范围):默认浏览器 outline 在图标按钮上太细,
+ * 与 web 端 ring 规范对齐;:focus-visible 只在键盘/触达时生效,鼠标点击不变。
+ * popup 各输入框不再各自写 focus:ring-* / focus:outline-none(后者会连
+ * focus-visible 一起杀掉),统一走这里,仅保留 focus:border-* 边框变色。 */
+.popup-root :is(button, [role="button"], a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 1px;
+}
+.popup-root :is(input, textarea, select):focus {
+  outline: none;
+}
+
+/* prefers-reduced-motion:进场动画/脉冲/spin 一并降为瞬时(tw-animate 的
+ * animate-in 与 lucide 旋转在此前完全无感知地播放)。loader 冻结帧仍配文案,
+ * 可接受;WCAG 2.2 动效要求。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "syncHealth": {
+    "description": "Overview of cloud sync data and extension status",
+    "card": {
+      "cloud": "Cloud Data",
+      "cloudDesc": "Total server data across entities",
+      "lastUpdate": "Latest Update",
+      "lastUpdateDesc": "Most recent data update time",
+      "extension": "Extension",
+      "extensionNotDetected": "Extension not detected",
+      "extensionConnected": "Extension connected",
+      "extensionStatusUnavailable": "Connected, status unavailable",
+      "extensionChecking": "Checking...",
+      "extensionPendingOps": "{{count}} pending ops",
+      "extensionLastSync": "Last sync: {{time}}",
+      "extensionNeverSynced": "Never synced",
+      "modeLocalOnly": "Local only",
+      "modeCloudSync": "Cloud sync",
+      "modePaused": "Paused"
+    },
+    "table": {
+      "entity": "Entity",
+      "cloudCount": "Cloud Count",
+      "lastUpdate": "Last Update",
+      "never": "Never"
+    },
+    "entity": {
+      "bookmarks": "Bookmarks",
+      "bookmark_folders": "Folders",
+      "tags": "Tags",
+      "tab_groups": "Tab groups",
+      "tab_group_items": "Tab group items"
+    },
+    "action": {
+      "triggerSync": "Refresh Status",
+      "syncing": "Refreshing..."
+    },
+    "message": {
+      "syncTriggered": "Sync status refreshed",
+      "syncFailed": "Failed to refresh"
+    }
+  }
+}

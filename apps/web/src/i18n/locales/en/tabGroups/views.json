@@ -1,0 +1,9 @@
+{
+  "detail": {
+    "backToList": "Back to list",
+    "groupNotFound": "Tab group not found",
+    "loadFailed": "Failed to load tab group",
+    "retry": "Retry",
+    "showArchived": "Show archived"
+  }
+}

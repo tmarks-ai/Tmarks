@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" fill="none" role="img" aria-label="貔貅 · TMarks 守藏神兽（占位）">
+  <g stroke="#0f0e15" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="200" cy="232" r="152" stroke-width="2" opacity="0.18"/>
+    <g id="half">
+      <path d="M200 150 C 232 122 248 82 252 52 C 254 38 244 30 236 28"/>
+      <path d="M200 180 C 214 172 228 174 238 186"/>
+      <path d="M206 204 Q 222 194 238 204 Q 222 216 206 204 Z" fill="#e8a13a" stroke="none"/>
+      <path d="M214 164 L 252 154 M 219 190 L 264 186 M 222 222 L 270 222 M 219 252 L 264 256 M 214 282 L 252 286"/>
+      <path d="M200 246 L 226 254 L 228 276 L 210 290 L 200 294"/>
+      <path d="M200 300 Q 215 306 222 316"/>
+      <path d="M200 334 L 216 334 L 216 350 Q 216 355 210 356 L 204 360 L 200 360"/>
+    </g>
+    <use href="#half" transform="matrix(-1 0 0 1 400 0)"/>
+    <path d="M200 250 L 200 274"/>
+    <circle cx="200" cy="346" r="2.5" fill="#f3ede2" stroke="none"/>
+    <path d="M176 384 L 224 384 L 224 524 L 200 506 L 176 524 Z" fill="#0f0e15" stroke="none"/>
+    <path d="M200 384 L 200 506" stroke="#f3ede2" stroke-width="2.5"/>
+  </g>
+</svg>

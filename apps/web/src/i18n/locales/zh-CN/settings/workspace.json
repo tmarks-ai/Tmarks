@@ -1,0 +1,25 @@
+{
+  "workspace": {
+    "nav": {
+      "title": "书签工作台",
+      "description": "选择左侧导航以文件夹还是标签为主。",
+      "folders": {
+        "title": "文件夹优先"
+      },
+      "tags": {
+        "title": "标签优先"
+      }
+    },
+    "pageSize": {
+      "title": "每页数量",
+      "description": "设置书签工作台默认分页数量。"
+    },
+    "auxPanel": {
+      "title": "辅助面板",
+      "description": "控制非主导航筛选在工作台中的呈现方式。",
+      "right": "右侧面板",
+      "drawer": "抽屉",
+      "hidden": "隐藏"
+    }
+  }
+}

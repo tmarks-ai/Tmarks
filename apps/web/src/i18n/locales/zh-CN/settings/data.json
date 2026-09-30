@@ -1,0 +1,13 @@
+{
+  "data": {
+    "export": {
+      "title": "导出数据"
+    },
+    "exportFeature": {
+      "description": "下载一份 Markdown 格式的书签副本。"
+    },
+    "bookmarksAvailable": "当前有 {{count}} 个书签",
+    "loading": "正在加载书签...",
+    "loadFailed": "书签数据加载失败"
+  }
+}
