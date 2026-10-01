@@ -7,15 +7,25 @@
 
 ## 部署
 
-### 方式 00：告诉你的 AI 代理"帮我部署 TMarks"
+### 方式 00：一键脚本（Cloudflare，最推荐 ⭐）
 
-如果你在用 Claude Code / Codex / Cursor / workbuddy 等 AI 代理，直接对它说：
+```bash
+git clone https://github.com/tmarks-ai/Tmarks.git
+cd Tmarks
+bash scripts/one-click-deploy.sh
+```
 
-> "帮我部署 TMarks，这是我的 Cloudflare API Token: `<粘贴令牌>`"
+浏览器会自动弹出 Cloudflare 授权页 → **点 [Allow]** → 脚本自动完成一切：
 
-AI 代理会读取 [skills/deploy-tmarks/SKILL.md](./skills/deploy-tmarks/SKILL.md) 并自动完成全部部署——你只需要提供密钥。
+- ✅ 自动登录 Cloudflare（OAuth，**不需要手动创建 Token**）
+- ✅ 自动创建 D1 数据库 + R2 存储桶
+- ✅ 自动生成并设置 JWT 密钥
+- ✅ 自动跑数据库迁移 → 部署 → 临时开启注册
+- ✅ 注册完成后按 Enter 自动关闭注册
 
-### 方式 0：预构建 Docker 镜像（一条命令）
+全程：**粘贴 3 条命令 → 浏览器点 Allow → 注册 → 按 Enter**。不需要复制任何令牌。
+
+### 方式 01：Docker 预构建镜像（一条命令）
 
 ```bash
 docker run -d -p 8787:8787 \
@@ -36,6 +46,14 @@ docker run -d -p 8787:8787 \
   ghcr.io/tmarks-ai/tmarks
 # 注册后删除 -e ALLOW_REGISTRATION=true 并重启
 ```
+
+### 方式 02：AI 代理部署（告诉 Claude Code / Codex / workbuddy）
+
+如果你在用 AI 代理，直接对它说：
+
+> "帮我部署 TMarks，这是我的 Cloudflare API Token: `<粘贴令牌>`"
+
+AI 代理会读取 [skills/deploy-tmarks/SKILL.md](./skills/deploy-tmarks/SKILL.md) 并自动完成全部部署。
 
 ### 方案 A：Docker Compose（需要 clone）
 
