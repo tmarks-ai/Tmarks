@@ -151,12 +151,12 @@ describe('dedupe scale', () => {
 })
 
 describe('organize-bookmarks skill format contract', () => {
-  // .zcode/skills/organize-bookmarks/SKILL.md documents the JSON import shape
+  // skills/organize-bookmarks/SKILL.md documents the JSON import shape
   // for AI-driven bulk curation. This test pins that contract: if the importer
   // changes shape, or the skill's example drifts from what parses cleanly,
   // CI fails instead of AI-generated files silently breaking.
   const fixture = readFileSync(
-    join(dirname(fileURLToPath(import.meta.url)), '../../../.zcode/skills/organize-bookmarks/example-import.json'),
+    join(dirname(fileURLToPath(import.meta.url)), '../../../skills/organize-bookmarks/example-import.json'),
     'utf8',
   )
 

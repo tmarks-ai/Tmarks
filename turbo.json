@@ -24,6 +24,9 @@
     },
     "@tmarks/worker#build": {
       "outputs": []
+    },
+    "@tmarks/server#build": {
+      "outputs": []
     }
   }
 }

@@ -1,60 +1,102 @@
 # TMarks
 
-AI 书签与标签页收纳系统:一键书签、整窗标签页收纳、网页快照、文件夹与标签、
-AI 智能整理、多端同步。自托管于 Cloudflare Workers + D1 + R2。
+**AI Bookmarking, Tab-Group Collection & Cross-Device Sync.**
 
-## 结构
+One-click bookmarking, whole-window tab collection, page snapshots, folders
+& tags, AI-powered organization, and multi-device sync. Self-hosted and
+open source.
 
-```
-packages/
-  contracts/   @tmarks/contracts   单一契约源(品牌类型 + 权威目录)
-  ai/          @tmarks/ai           单条书签 AI 分类
-  backend-core/ @tmarks/backend-core 后端 handler + Hono 路由
-apps/
-  web/         React 19 + Vite 7 + Tailwind v4(Web 应用)
-  tab/         MV3 扩展(Dexie + revision 同步)
-  worker/      Cloudflare Worker(消费 backend-core)
-landing/       落地页(独立构建,不参与 turbo 流水线)
-sql/           D1 schema 唯一来源(01-08 按域编号,追加式演进,见 sql/README.md)
-```
+**中文说明：** AI 书签与标签页收纳系统——一键书签、整窗标签页收纳、网页快照、
+文件夹与标签、AI 智能整理、多端同步。开源自托管。
 
-## 硬约束
+## Deploy
 
-每个代码文件 ≤ 300 行,由 `scripts/check-code-size.mjs` 强制(根 `pnpm check:code-size`)。
-
-## 快速开始
+### Option A: Docker (one command)
 
 ```bash
-pnpm install        # Node ≥ 20,pnpm 10
+git clone https://github.com/tmarks-ai/Tmarks.git
+cd Tmarks
+echo "JWT_SECRET=$(openssl rand -base64 32)" > .env
+docker compose up -d
+```
+
+Open `http://localhost:8787`, then enable registration temporarily:
+
+```bash
+echo "JWT_SECRET=$(openssl rand -base64 32)
+ALLOW_REGISTRATION=true" > .env
+docker compose up -d
+# Register your account, then remove ALLOW_REGISTRATION and restart
+```
+
+- **Data persists** in the `tmarks-data` Docker volume (SQLite + snapshot files)
+- **Migrations run automatically** on first startup and on upgrades
+- **Rate limiting** uses SQLite-backed counters (no external dependencies)
+- Works on any VPS, home server, or NAS with Docker
+
+### Option B: Cloudflare Workers (free tier)
+
+See [DEPLOY.md](./DEPLOY.md) for the full Cloudflare Workers + D1 + R2
+deployment guide (free tier fully supported).
+
+## Install the Browser Extension
+
+1. `pnpm --filter @tmarks/tab build` — output at `apps/tab/dist`
+2. Open `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select `apps/tab/dist`
+3. In the extension settings, set the **API source** to your server URL
+4. Create an API key from the web app (Settings → API) and paste it in
+
+## Features
+
+| Feature | Description |
+|---|---|
+| **One-click bookmarking** | Save any page with a single click |
+| **Tab collection** | Snap an entire browser window into a tagged group |
+| **Page snapshots** | Full-page HTML snapshots with 20-version rotation |
+| **AI organization** | BYOK (bring your own key) — classify bookmarks via OpenAI-compatible APIs |
+| **Cross-device sync** | Extension ↔ web sync with revision-based conflict resolution |
+| **Folder & tag system** | Two-level folders with drag-and-drop reordering |
+| **Public sharing** | Share your public bookmarks via a URL slug |
+
+## Project Structure
+
+```
+apps/
+  web/         React 19 + Vite 7 + Tailwind v4 (SPA)
+  tab/         MV3 extension (Dexie + revision sync)
+  worker/      Cloudflare Worker entry (consumes backend-core)
+  server/      Node.js/Docker server entry (SQLite + filesystem)
+packages/
+  contracts/   Shared TypeScript contracts (DTOs, permissions, error codes)
+  ai/          AI classification client (provider-agnostic, BYOK)
+  backend-core/ Hono backend (routes, middleware, sync engine)
+landing/       Landing page (standalone build)
+skills/         Bookmark organizing guide (user-facing)
+sql/            D1/SQLite schema (01-08, append-only)
+```
+
+## Quick Start (Development)
+
+```bash
+pnpm install        # Node ≥ 22.5, pnpm 10
 pnpm build          # turbo run build
 pnpm type-check     # turbo run type-check
-pnpm test           # turbo run test
+pnpm test           # turbo run test (499+ tests)
 pnpm check:code-size
 ```
 
-部署与自托管步骤(创建 D1/R2、迁移、Secret、自定义域名)见 [DEPLOY.md](./DEPLOY.md)。
+## Security
 
-## 浏览器扩展
+- **Web:** JWT access token + HttpOnly refresh cookie (rotation + reuse detection)
+- **Extension:** Fine-grained `X-API-Key` with per-route permissions
+- **Fail-closed startup:** missing migrations or weak `JWT_SECRET` (<32 chars) = no service
+- **Self-reporting responsibly:** see [SECURITY.md](./SECURITY.md)
 
-扩展安装、API 源/密钥配置与三方同步协作链路见 [EXTENSION.md](./EXTENSION.md)。
+## Contributing
 
-## 安全
+See [CONTRIBUTING.md](./CONTRIBUTING.md) (includes the Workers platform
+limits checklist). Code of conduct: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
 
-- Web 端:密码登录(JWT 访问令牌 + HttpOnly Cookie 刷新令牌,轮换并检测重用)。
-- 扩展端:细粒度 `X-API-Key`。
-- Worker 启动即 fail-closed:D1 迁移未应用或 `JWT_SECRET` 弱于 32 字符时拒绝服务。
-- 漏洞请走私密渠道,详见 [SECURITY.md](./SECURITY.md)。
+## License
 
-## 贡献
-
-见 [CONTRIBUTING.md](./CONTRIBUTING.md)。行为准则见 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。
-
-## 许可
-
-[MIT](./LICENSE) © 2024-2026 TMarks Team。第三方声明见 [NOTICE.md](./NOTICE.md)。
-
-## 原则
-
-重写"壳",复用"算法":脚手架全新,但 sync / snapshot / license / auth / AI 单条分类的
-prompt+解析+fallback / D1 schema 从旧版自研代码移植(© TMarks Team,原 CC BY-NC 4.0,
-本仓库随仓库整体以 MIT 再授权,见 NOTICE.md)。
+[MIT](./LICENSE) © 2024–2026 TMarks Team. Third-party notices: [NOTICE.md](./NOTICE.md).

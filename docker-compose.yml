@@ -1,0 +1,20 @@
+services:
+  tmarks:
+    build: .
+    ports:
+      - "8787:8787"
+    environment:
+      # REQUIRED: generate with `openssl rand -base64 32`
+      JWT_SECRET: ${JWT_SECRET:?Please set JWT_SECRET (min 32 chars)}
+      # "true" only for the first registration, then set to "false" or remove
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}
+      ENVIRONMENT: production
+      TMARKS_DATA_DIR: /app/data
+      TMARKS_WEB_DIST: /app/apps/web/dist
+      TMARKS_PORT: 8787
+    volumes:
+      - tmarks-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  tmarks-data:

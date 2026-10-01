@@ -1,0 +1,24 @@
+{
+  "name": "@tmarks/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TMarks self-hosted Node.js server (Docker/VPS deployment without Cloudflare).",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "type-check": "tsc --noEmit",
+    "start": "node --experimental-strip-types --no-warnings src/main.ts",
+    "dev": "node --experimental-strip-types --no-warnings --watch src/main.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "@tmarks/backend-core": "workspace:*",
+    "@tmarks/contracts": "workspace:*",
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}
