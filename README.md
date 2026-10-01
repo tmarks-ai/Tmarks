@@ -7,7 +7,29 @@
 
 ## 部署
 
-### 方案 A：Docker（一条命令）
+### 方式 0：预构建 Docker 镜像（真正的只需一条命令）
+
+```bash
+docker run -d -p 8787:8787 \
+  -v tmarks-data:/app/data \
+  -e JWT_SECRET=$(openssl rand -base64 32) \
+  ghcr.io/tmarks-ai/tmarks
+```
+
+打开 `http://localhost:8787` 即可使用。不需要 clone、不需要 build、不需要 pnpm。
+
+**首次注册：**
+
+```bash
+docker run -d -p 8787:8787 \
+  -v tmarks-data:/app/data \
+  -e JWT_SECRET=$(openssl rand -base64 32) \
+  -e ALLOW_REGISTRATION=true \
+  ghcr.io/tmarks-ai/tmarks
+# 注册后删除 -e ALLOW_REGISTRATION=true 并重启
+```
+
+### 方案 A：Docker Compose（需要 clone）
 
 ```bash
 git clone https://github.com/tmarks-ai/Tmarks.git
@@ -15,8 +37,6 @@ cd Tmarks
 echo "JWT_SECRET=$(openssl rand -base64 32)" > .env
 docker compose up -d
 ```
-
-打开 `http://localhost:8787` 即可使用。
 
 - **数据持久化**在 Docker volume（SQLite + 快照文件）
 - **迁移自动执行**——首次启动和升级都无需手动跑 SQL
