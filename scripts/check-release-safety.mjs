@@ -55,7 +55,7 @@ for (const prefix of forbiddenPrefixes) {
 for (const file of ['package.json', 'apps/tab/package.json', 'apps/web/package.json', 'apps/worker/package.json', 'packages/ai/package.json', 'packages/backend-core/package.json', 'packages/contracts/package.json', 'landing/package.json']) {
   try {
     const text = readFileSync(join(root, file), 'utf8')
-    if (text.includes('github.com/tmarks-ai/')) fail(`placeholder repository URL in ${file}`)
+    if (text.includes('github.com/your-org/')) fail(`placeholder repository URL in ${file}`)
   } catch {
     fail(`missing manifest: ${file}`)
   }

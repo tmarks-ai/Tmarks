@@ -118,6 +118,21 @@ describe('full middleware chain (security headers + cache policy + CORS + 404 + 
     expect(body.error.code).toBe('MISSING_API_KEY')
   })
 
+  it('keeps the 401 when the 1% audit-retention sweep fires with no ExecutionContext', async () => {
+    const h = db()
+    // requestLogger routes maybePruneAuditLogs through waitUntil on 1% of
+    // requests. app.request() has no ExecutionContext, so the raw call threw
+    // "This context has no ExecutionContext" and the error handler answered
+    // 500 instead of 401 — flaky in CI (1 in ~15 requests across this file)
+    // and a guaranteed 500 for the Docker server. Force the branch open.
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
+    const res = await callApp(h, null, '/api/v1/bookmarks')
+    random.mockRestore()
+    expect(res.status).toBe(401)
+    const body = JSON.parse(await res.text()) as { error: { code: string } }
+    expect(body.error.code).toBe('MISSING_API_KEY')
+  })
+
   it('returns 401 INVALID_TOKEN for a forged bearer token', async () => {
     const h = db()
     const res = await callApp(h, 'totally-fake-token', '/api/v1/bookmarks')

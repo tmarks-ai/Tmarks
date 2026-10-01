@@ -4,6 +4,7 @@ import { consumeApiKeyRateLimit } from '../lib/api-key/rate-limit-binding'
 import { logApiKeyUsage } from '../lib/api-key/logger'
 import { validateApiKey } from '../lib/api-key/validator'
 import type { AppEnv } from '../lib/env'
+import { getSafeWaitUntil } from '../lib/safe-wait-until'
 import { forbidden, tooManyRequests, unauthorized } from '../lib/response'
 
 export interface ApiKeyAuthOptions {
@@ -89,16 +90,17 @@ async function handleApiKeyAuth(
   // last_used_at exists to show "recently active" in the settings UI; the
   // validator already read it, so skip the UPDATE when it is fresh — every
   // extension request (pull every 5 min) no longer costs a written row.
+  const waitUntil = getSafeWaitUntil(c)
   const lastUsedMs = keyData.last_used_at ? Date.parse(keyData.last_used_at) : 0
   if (Number.isNaN(lastUsedMs) || Date.now() - lastUsedMs > LAST_USED_THROTTLE_MS) {
-    c.executionCtx.waitUntil(updateApiKeyLastUsed(c.env.DB, keyData.id, ip))
+    waitUntil(updateApiKeyLastUsed(c.env.DB, keyData.id, ip))
   }
   await next()
 
   const headers = new Headers(c.res.headers)
   for (const [key, value] of Object.entries(rateLimitHeaders)) headers.set(key, value)
   c.res = new Response(c.res.body, { status: c.res.status, statusText: c.res.statusText, headers })
-  c.executionCtx.waitUntil(
+  waitUntil(
     logApiKeyUsage(
       {
         api_key_id: keyData.id,

@@ -1,8 +1,9 @@
 import type { Context } from 'hono'
 import type { AppEnv } from '../../../lib/env'
-import { noContent, notFound, internalError } from '../../../lib/response'
 import { permanentDeleteBookmark } from '../../../lib/bookmarks'
 import { purgeSnapshotObjects } from '../../../lib/bookmarks/snapshot-r2'
+import { getSafeWaitUntil } from '../../../lib/safe-wait-until'
+import { noContent, notFound, internalError } from '../../../lib/response'
 
 /**
  * DELETE /:id/permanent — permanently delete a trashed bookmark together with
@@ -16,7 +17,7 @@ export async function permanentDeleteHandler(c: Context<AppEnv>): Promise<Respon
   if (!bookmarkId) return notFound('Bookmark not found')
 
   const result = await permanentDeleteBookmark(c.env.DB, bookmarkId, userId)
-  purgeSnapshotObjects(c.env, result.orphanedStorageKeys, (p) => c.executionCtx.waitUntil(p), c.req.url)
+  purgeSnapshotObjects(c.env, result.orphanedStorageKeys, getSafeWaitUntil(c), c.req.url)
   if (!result.success) {
     return result.error === 'Bookmark not found in trash'
       ? notFound(result.error)

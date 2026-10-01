@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from 'hono'
 import type { AppEnv } from '../lib/env'
 import { maybePruneAuditLogs } from '../lib/audit/retention'
+import { getSafeWaitUntil } from '../lib/safe-wait-until'
 
 /** Log every request (method/url/status/duration/ip) and tag it with X-Request-ID. */
 export const requestLogger: MiddlewareHandler<AppEnv> = async (c, next) => {
@@ -27,8 +28,9 @@ export const requestLogger: MiddlewareHandler<AppEnv> = async (c, next) => {
     )
     appendRequestId(c, requestId)
     // Attached to the invocation's lifetime (R5-7): without waitUntil the
-    // isolate can settle before the 1% retention sweep ever runs.
-    maybePruneAuditLogs(c.env.DB, (promise) => c.executionCtx.waitUntil(promise))
+    // isolate can settle before the 1% retention sweep ever runs. Falls back
+    // to fire-and-forget where no ExecutionContext exists (tests / Node server).
+    maybePruneAuditLogs(c.env.DB, getSafeWaitUntil(c))
   } catch (error) {
     const duration = Date.now() - start
     console.error(
