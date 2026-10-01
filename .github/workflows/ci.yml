@@ -73,12 +73,13 @@ jobs:
       - name: Check Cloudflare secrets
         id: secrets
         run: |
-          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.D1_DATABASE_ID }}" ]; then
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ] || [ -z "${{ secrets.JWT_SECRET }}" ]; then
             echo "configured=false" >> $GITHUB_OUTPUT
             echo "::notice::Cloudflare secrets not configured — deploy skipped. See README '方案 B' for setup."
           else
             echo "configured=true" >> $GITHUB_OUTPUT
           fi
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         if: steps.secrets.outputs.configured == 'true'
         with:
@@ -98,21 +99,51 @@ jobs:
       - name: Build web app
         if: steps.secrets.outputs.configured == 'true'
         run: pnpm --filter @tmarks/web build
-      - name: Fill D1 database_id
+
+      - name: Provision D1 + R2 + JWT secret (auto, first run creates everything)
         if: steps.secrets.outputs.configured == 'true'
-        run: sed -i "s|<your-d1-database-id>|$D1_DATABASE_ID|" apps/worker/wrangler.toml
-        env:
-          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
-      - name: Apply D1 migrations
-        if: steps.secrets.outputs.configured == 'true'
-        run: cd apps/worker && npx wrangler d1 migrations apply tmarks-db --remote
+        working-directory: apps/worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # ① Create D1 database if it doesn't exist
+          if ! npx wrangler d1 info tmarks-db --remote 2>/dev/null; then
+            echo "::group::Creating D1 database"
+            npx wrangler d1 create tmarks-db
+            echo "::endgroup::"
+          else
+            echo "D1 database tmarks-db already exists"
+          fi
+
+          # ② Discover the database_id
+          DATABASE_ID=$(npx wrangler d1 list --json 2>/dev/null \
+            | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); const db=d.find(x=>x.name==='tmarks-db'); console.log(db?db.uuid:'')")
+          if [ -z "$DATABASE_ID" ]; then
+            echo "ERROR: Could not find database_id for tmarks-db"
+            exit 1
+          fi
+          echo "database_id=$DATABASE_ID"
+          sed -i "s|<your-d1-database-id>|$DATABASE_ID|" wrangler.toml
+
+          # ③ Create R2 bucket if it doesn't exist (ignore error if already exists)
+          npx wrangler r2 bucket create tmarks-snapshots 2>/dev/null || true
+
+          # ④ Set JWT secret (idempotent — overwrites if already set)
+          echo "${{ secrets.JWT_SECRET }}" | npx wrangler secret put JWT_SECRET
+
+      - name: Apply D1 migrations
+        if: steps.secrets.outputs.configured == 'true'
+        working-directory: apps/worker
+        run: npx wrangler d1 migrations apply tmarks-db --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Deploy Worker
         if: steps.secrets.outputs.configured == 'true'
+        working-directory: apps/worker
         run: |
-          cd apps/worker
           EXTRA_ARGS=""
           if [ "${{ github.event.inputs.allow_registration }}" == "true" ]; then
             EXTRA_ARGS="--var ALLOW_REGISTRATION:true"

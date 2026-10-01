@@ -52,7 +52,9 @@ docker compose up -d
 # 注册账户后，删除 ALLOW_REGISTRATION 行并重启
 ```
 
-### 方案 B：Cloudflare Workers（免费档，GitHub Actions 自动部署）
+### 方案 B：Cloudflare Workers（免费档，全自动部署）
+
+> 全程在浏览器里操作，**不需要打开终端**。D1 数据库、R2 桶、JWT 密钥全部由 GitHub Actions 自动创建。
 
 #### 第一步：创建 Cloudflare API Token
 
@@ -67,49 +69,31 @@ docker compose up -d
 
 点击 **Continue to summary** → **Create Token** → 复制令牌。
 
-#### 第二步：创建资源（终端复制粘贴，一次性）
-
-```bash
-# ─── 以下命令全部在项目根目录执行，逐段复制 ───
-
-# 登录 Cloudflare（浏览器弹授权页）
-npx wrangler login
-
-# 创建 D1 数据库（输出里有一行 database_id，复制它）
-npx wrangler d1 create tmarks-db
-
-# 创建 R2 存储桶
-npx wrangler r2 bucket create tmarks-snapshots
-
-# 生成并设置 JWT 密钥（粘贴时用下面这行的输出）
-openssl rand -base64 32
-cd apps/worker
-npx wrangler secret put JWT_SECRET
-cd ../..
-```
-
-#### 第三步：在 GitHub 添加 3 个 Secrets
+#### 第二步：在 GitHub 添加 3 个 Secrets
 
 打开 [Settings → Secrets and variables → Actions](https://github.com/tmarks-ai/Tmarks/settings/secrets/actions) → **New repository secret**：
 
-| Secret 名 | 值来源 |
+| Secret 名 | 值 |
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | 第一步复制的令牌 |
-| `CLOUDFLARE_ACCOUNT_ID` | [Cloudflare Dashboard](https://dash.cloudflare.com) 首页右栏 |
-| `D1_DATABASE_ID` | 第二步 `wrangler d1 create` 输出的 database_id |
+| `CLOUDFLARE_ACCOUNT_ID` | [Cloudflare Dashboard](https://dash.cloudflare.com) 首页右侧栏的 Account ID |
+| `JWT_SECRET` | 任何 ≥32 字符的随机字符串（可用[在线密码生成器](https://www.random.org/strings/?num=1&len=44&digits=on&upperalpha=on&loweralpha=on&unique=on&format=html&rnd=new)生成） |
 
-#### 第四步：推送即自动部署
+#### 第三步：推送代码（或直接改文件）
 
 ```bash
 git push origin main
 ```
 
-#### 第五步：注册首个账户
+或者：在 GitHub 网页上编辑任意文件（如 README）→ Commit changes → 自动触发部署。
 
-去 **Actions** → **CI** → **Run workflow** → 勾选 ☑️ **"Temporarily open registration"** → **Run workflow**。
-部署完成后打开 workers.dev URL 注册账户，然后再 Run 一次（不勾选）关闭注册。
+#### 首次注册
 
-**此后每次 push 到 main 自动部署，新增 `sql/*.sql` 迁移文件自动执行。**
+部署完成后，去 **Actions** → **CI** → **Run workflow** → 勾选 ☑️ **"Temporarily open registration"** → **Run workflow**。
+
+打开 workers.dev URL 注册账户，然后再 Run 一次（不勾选）关闭注册。
+
+**此后每次 push 到 main 自动部署，SQL 迁移自动执行，新资源自动创建。**
 
 ## 安装浏览器扩展
 
