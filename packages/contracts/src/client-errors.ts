@@ -18,12 +18,15 @@ export type ClientErrorCode = ApiErrorCode | LocalErrorCode
 
 /** API error carrying the server (or client-local) code plus the HTTP status. */
 export class ApiError extends Error {
-  constructor(
-    public code: ClientErrorCode,
-    message: string,
-    public status: number,
-  ) {
+  /** Parameter properties are avoided: apps/server consumes this source via
+   * Node --experimental-strip-types (erasable syntax only), which rejects them. */
+  readonly code: ClientErrorCode
+  readonly status: number
+
+  constructor(code: ClientErrorCode, message: string, status: number) {
     super(message)
+    this.code = code
+    this.status = status
     this.name = 'ApiError'
   }
 }

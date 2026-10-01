@@ -1,5 +1,6 @@
 import { emitSyncChange } from '../sync/sync-emit'
 import { fetchExternalResource } from '../net/external-fetch'
+import { getSafeWaitUntil } from '../safe-wait-until'
 import type { Context } from 'hono'
 import type { AppEnv, Env } from '../env'
 
@@ -96,8 +97,9 @@ export function schedulePersistBookmarkImages(
 
 /**
  * Route-handler entry point. Tolerates a missing ExecutionContext (the
- * unit-test harness): persistence is skipped and the bookmark simply keeps
- * its remote URLs — identical to the pre-persistence behaviour.
+ * integration-test harness and the self-hosted Node server): persistence
+ * degrades to fire-and-forget via getSafeWaitUntil instead of being skipped,
+ * so the long-lived Node process still self-heals favicons into R2.
  */
 export function schedulePersistFromContext(
   c: Context<AppEnv>,
@@ -107,11 +109,7 @@ export function schedulePersistFromContext(
   coverImage: string | null | undefined,
 ): void {
   if (!c.env.SNAPSHOTS) return
-  try {
-    schedulePersistBookmarkImages(c.env, c.executionCtx, userId, bookmarkId, favicon, coverImage)
-  } catch {
-    /* no execution context available — skip */
-  }
+  schedulePersistBookmarkImages(c.env, { waitUntil: getSafeWaitUntil(c) }, userId, bookmarkId, favicon, coverImage)
 }
 
 export async function persistBookmarkImages(

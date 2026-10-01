@@ -23,8 +23,15 @@ interface PublicShareRow {
 }
 
 export class PublicShareSettingsError extends Error {
-  constructor(public readonly code: 'VALIDATION_FAILED' | 'CONFLICT', message: string, public readonly status: 400 | 409 = 400) {
+  readonly code: 'VALIDATION_FAILED' | 'CONFLICT'
+  readonly status: 400 | 409
+
+  /** Parameter properties are avoided: the Node.js server runs this source via
+   * --experimental-strip-types (erasable syntax only), which rejects them. */
+  constructor(code: 'VALIDATION_FAILED' | 'CONFLICT', message: string, status: 400 | 409 = 400) {
     super(message)
+    this.code = code
+    this.status = status
     this.name = 'PublicShareSettingsError'
   }
 }

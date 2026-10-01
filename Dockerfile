@@ -6,6 +6,7 @@ RUN corepack enable
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
 COPY apps/web/package.json apps/web/
+COPY apps/tab/package.json apps/tab/
 COPY apps/worker/package.json apps/worker/
 COPY apps/server/package.json apps/server/
 COPY packages/contracts/package.json packages/contracts/
@@ -35,7 +36,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/contracts/node_modules ./packages/contracts/node_modules
 COPY --from=builder /app/packages/backend-core/node_modules ./packages/backend-core/node_modules
 
-# Application source (TypeScript — executed with node --experimental-strip-types)
+# Application source (TypeScript — executed with tsx, which resolves the
+# monorepo's extensionless bundler-style imports that Node strip-types cannot)
 COPY packages/contracts/ ./packages/contracts/
 COPY packages/backend-core/ ./packages/backend-core/
 COPY packages/ai/ ./packages/ai/
@@ -59,4 +61,4 @@ EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD node -e "fetch('http://127.0.0.1:8787/api/v1/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
-CMD ["node", "--experimental-strip-types", "--no-warnings", "apps/server/src/main.ts"]
+CMD ["apps/server/node_modules/.bin/tsx", "apps/server/src/main.ts"]

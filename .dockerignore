@@ -1,5 +1,10 @@
-node_modules
-dist
+# Nested patterns use ** so host builds (Windows/macOS junction+symlink farms)
+# can never clobber the container's own pnpm install via COPY . .
+**/node_modules
+**/dist
+**/.turbo
+**/.wrangler
+**/coverage
 .turbo
 .wrangler
 .mf
@@ -8,7 +13,6 @@ dist
 release
 reports
 build
-coverage
 data
 .playwright-mcp
 .zcode
@@ -21,14 +25,6 @@ gui-test-screenshots
 .DS_Store
 .idea
 .vscode
-*.png
-*.jpg
-*.gif
-landing-full-desktop.png
-landing/node_modules
-landing/dist
 landing/dist-ssr
-apps/web/dist
-apps/tab/dist
-apps/worker/.wrangler
+landing-full-desktop.png
 AUDIT-*.md

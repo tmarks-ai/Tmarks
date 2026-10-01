@@ -58,6 +58,9 @@ const bindings = {
   SNAPSHOTS,
   JWT_SECRET,
   ENVIRONMENT,
+  // First-registration flow: pass ALLOW_REGISTRATION through so the documented
+  // `docker run -e ALLOW_REGISTRATION=true` works; omitted = closed (403).
+  ...(process.env.ALLOW_REGISTRATION === 'true' ? { ALLOW_REGISTRATION: 'true' } : {}),
   // Rate limiters intentionally absent: backend-core falls back to
   // D1/SQLite-backed rate limiting automatically.
 } as Record<string, unknown>

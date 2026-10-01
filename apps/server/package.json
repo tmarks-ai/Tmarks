@@ -7,14 +7,15 @@
   "scripts": {
     "build": "tsc --noEmit",
     "type-check": "tsc --noEmit",
-    "start": "node --experimental-strip-types --no-warnings src/main.ts",
-    "dev": "node --experimental-strip-types --no-warnings --watch src/main.ts"
+    "start": "tsx src/main.ts",
+    "dev": "tsx watch src/main.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
     "@tmarks/backend-core": "workspace:*",
     "@tmarks/contracts": "workspace:*",
-    "hono": "catalog:"
+    "hono": "catalog:",
+    "tsx": "^4.20.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",

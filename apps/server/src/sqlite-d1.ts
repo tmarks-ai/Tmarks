@@ -32,11 +32,16 @@ export interface SqliteDatabase {
 const D1_MAX_BOUND_PARAMS = 100
 
 class SqliteD1Statement {
-  constructor(
-    private readonly db: SqliteDatabase,
-    private readonly sql: string,
-    private readonly params: unknown[] = [],
-  ) {
+  /** Parameter properties avoided: apps/server runs via --experimental-strip-types
+   * (erasable syntax only), which rejects them. */
+  private readonly db: SqliteDatabase
+  private readonly sql: string
+  private readonly params: unknown[]
+
+  constructor(db: SqliteDatabase, sql: string, params: unknown[] = []) {
+    this.db = db
+    this.sql = sql
+    this.params = params
     if (params.length > D1_MAX_BOUND_PARAMS) {
       throw new Error(
         `D1 platform limit: ${params.length} bound parameters exceed 100. SQL: ${sql.slice(0, 120)}`,
@@ -82,7 +87,13 @@ class SqliteD1Statement {
 }
 
 export class SqliteD1Database {
-  constructor(readonly sqlite: SqliteDatabase) {}
+  /** Parameter property avoided: apps/server runs via --experimental-strip-types
+   * (erasable syntax only), which rejects constructor parameter properties. */
+  readonly sqlite: SqliteDatabase
+
+  constructor(sqlite: SqliteDatabase) {
+    this.sqlite = sqlite
+  }
 
   prepare(sql: string): SqliteD1Statement {
     return new SqliteD1Statement(this.sqlite, sql)
