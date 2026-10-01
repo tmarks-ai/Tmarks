@@ -7,7 +7,15 @@
 
 ## 部署
 
-### 方式 0：预构建 Docker 镜像（真正的只需一条命令）
+### 方式 00：告诉你的 AI 代理"帮我部署 TMarks"
+
+如果你在用 Claude Code / Codex / Cursor / workbuddy 等 AI 代理，直接对它说：
+
+> "帮我部署 TMarks，这是我的 Cloudflare API Token: `<粘贴令牌>`"
+
+AI 代理会读取 [skills/deploy-tmarks/SKILL.md](./skills/deploy-tmarks/SKILL.md) 并自动完成全部部署——你只需要提供密钥。
+
+### 方式 0：预构建 Docker 镜像（一条命令）
 
 ```bash
 docker run -d -p 8787:8787 \
