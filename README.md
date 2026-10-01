@@ -34,10 +34,33 @@ docker compose up -d
 - **Rate limiting** uses SQLite-backed counters (no external dependencies)
 - Works on any VPS, home server, or NAS with Docker
 
-### Option B: Cloudflare Workers (free tier)
+### Option B: Cloudflare Workers (free tier, auto-deploy via GitHub Actions)
 
-See [DEPLOY.md](./DEPLOY.md) for the full Cloudflare Workers + D1 + R2
-deployment guide (free tier fully supported).
+**One-time setup** (5 minutes, then every push to main auto-deploys):
+
+```bash
+# 1. Create resources (one-time, local)
+wrangler d1 create tmarks-db           # copy the database_id
+wrangler r2 bucket create tmarks-snapshots
+wrangler secret put JWT_SECRET         # openssl rand -base64 32
+
+# 2. Add secrets to GitHub (repo → Settings → Secrets and variables → Actions)
+#    CLOUDFLARE_API_TOKEN   — your Cloudflare API token
+#    CLOUDFLARE_ACCOUNT_ID  — your Cloudflare Account ID
+#    D1_DATABASE_ID         — the database_id from step 1
+
+# 3. Push to main — CI auto-builds, applies migrations, and deploys
+git push origin main
+
+# 4. First account: trigger the workflow manually with "allow_registration"
+#    checked (Actions → CI → Run workflow), register, then trigger again
+#    without it to close registration.
+```
+
+- **SQL migrations apply automatically** on every deploy
+- **Zero local wrangler commands** after the one-time setup
+- PR verification runs on every pull request; deploy only on main
+- Full details: [DEPLOY.md](./DEPLOY.md)
 
 ## Install the Browser Extension
 
