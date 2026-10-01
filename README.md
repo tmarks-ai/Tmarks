@@ -54,7 +54,7 @@ docker compose up -d
 
 ### 方案 B：Cloudflare Workers（免费档，GitHub Actions 自动部署）
 
-**第一步——创建 Cloudflare API Token：**
+#### 第一步：创建 Cloudflare API Token
 
 打开 [https://dash.cloudflare.com/profile/api-tokens/create](https://dash.cloudflare.com/profile/api-tokens/create) → **Create Custom Token** → 添加以下 4 个权限：
 
@@ -67,38 +67,44 @@ docker compose up -d
 
 点击 **Continue to summary** → **Create Token** → 复制令牌。
 
-**第二步——创建资源**（终端跑一次）：
+#### 第二步：创建资源（终端复制粘贴，一次性）
 
 ```bash
+# ─── 以下命令全部在项目根目录执行，逐段复制 ───
+
+# 登录 Cloudflare（浏览器弹授权页）
 npx wrangler login
 
+# 创建 D1 数据库（输出里有一行 database_id，复制它）
 npx wrangler d1 create tmarks-db
-# ↑ 复制输出中的 database_id
 
+# 创建 R2 存储桶
 npx wrangler r2 bucket create tmarks-snapshots
 
+# 生成并设置 JWT 密钥（粘贴时用下面这行的输出）
+openssl rand -base64 32
 cd apps/worker
 npx wrangler secret put JWT_SECRET
-# ↑ 粘贴: openssl rand -base64 32
+cd ../..
 ```
 
-**第三步——在 GitHub 添加 3 个 Secrets：**
+#### 第三步：在 GitHub 添加 3 个 Secrets
 
 打开 [Settings → Secrets and variables → Actions](https://github.com/tmarks-ai/Tmarks/settings/secrets/actions) → **New repository secret**：
 
-| Secret 名 | 值 |
+| Secret 名 | 值来源 |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | 第一步创建的令牌 |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID（[查看方法](https://developers.cloudflare.com/fundamentals/account/find-account-and-zone-ids/)） |
-| `D1_DATABASE_ID` | 第二步输出的 database_id |
+| `CLOUDFLARE_API_TOKEN` | 第一步复制的令牌 |
+| `CLOUDFLARE_ACCOUNT_ID` | [Cloudflare Dashboard](https://dash.cloudflare.com) 首页右栏 |
+| `D1_DATABASE_ID` | 第二步 `wrangler d1 create` 输出的 database_id |
 
-**第四步——推送即可自动部署：**
+#### 第四步：推送即自动部署
 
 ```bash
 git push origin main
 ```
 
-**第五步——注册首个账户：**
+#### 第五步：注册首个账户
 
 去 **Actions** → **CI** → **Run workflow** → 勾选 ☑️ **"Temporarily open registration"** → **Run workflow**。
 部署完成后打开 workers.dev URL 注册账户，然后再 Run 一次（不勾选）关闭注册。
