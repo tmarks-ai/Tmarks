@@ -15,7 +15,7 @@ export const CONFIG: LandingConfig = {
   // TODO: replace with your TMarks GitHub repository URL before publishing.
   // Empty = the GitHub CTAs hide themselves instead of rendering a 404 link;
   // fill it in and they come back everywhere at once.
-  githubUrl: '',
+  githubUrl: 'https://github.com/tmarks-ai/Tmarks',
   // In-page anchor by default (the install section).
   extensionUrl: '#install',
   // TODO: drop the real Pixiu portrait here (e.g. '/pixiu-hero.webp').

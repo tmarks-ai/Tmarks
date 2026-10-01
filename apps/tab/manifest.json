@@ -29,6 +29,7 @@
     "page": "src/options/index.html",
     "open_in_tab": true
   },
+  "homepage_url": "https://github.com/tmarks-ai/Tmarks",
   "permissions": [
     "storage",
     "alarms",
