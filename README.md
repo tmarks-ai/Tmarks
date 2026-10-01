@@ -38,29 +38,55 @@ docker compose up -d
 
 **One-time setup** (5 minutes, then every push to main auto-deploys):
 
+**Step 1 — Create a Cloudflare API Token:**
+
+Open [https://dash.cloudflare.com/profile/api-tokens/create](https://dash.cloudflare.com/profile/api-tokens/create) → **Create Custom Token** → add these 4 permissions:
+
+| Permission | Level |
+|---|---|
+| Account → **Workers Scripts** | Edit |
+| Account → **D1** | Edit |
+| Account → **Workers R2 Storage** | Edit |
+| Account → **Account Settings** | Read |
+
+Click **Continue to summary** → **Create Token** → copy the token.
+
+**Step 2 — Create Cloudflare resources** (run once from your terminal):
+
 ```bash
-# 1. Create resources (one-time, local)
-wrangler d1 create tmarks-db           # copy the database_id
-wrangler r2 bucket create tmarks-snapshots
-wrangler secret put JWT_SECRET         # openssl rand -base64 32
+npx wrangler login
 
-# 2. Add secrets to GitHub (repo → Settings → Secrets and variables → Actions)
-#    CLOUDFLARE_API_TOKEN   — your Cloudflare API token
-#    CLOUDFLARE_ACCOUNT_ID  — your Cloudflare Account ID
-#    D1_DATABASE_ID         — the database_id from step 1
+npx wrangler d1 create tmarks-db
+# ↑ copy the database_id from the output
 
-# 3. Push to main — CI auto-builds, applies migrations, and deploys
-git push origin main
+npx wrangler r2 bucket create tmarks-snapshots
 
-# 4. First account: trigger the workflow manually with "allow_registration"
-#    checked (Actions → CI → Run workflow), register, then trigger again
-#    without it to close registration.
+cd apps/worker
+npx wrangler secret put JWT_SECRET
+# ↑ paste: openssl rand -base64 32
 ```
 
-- **SQL migrations apply automatically** on every deploy
-- **Zero local wrangler commands** after the one-time setup
-- PR verification runs on every pull request; deploy only on main
-- Full details: [DEPLOY.md](./DEPLOY.md)
+**Step 3 — Add 3 secrets to GitHub:**
+
+Go to [https://github.com/tmarks-ai/Tmarks/settings/secrets/actions](https://github.com/tmarks-ai/Tmarks/settings/secrets/actions) → **New repository secret**:
+
+| Secret name | Value |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | The token from Step 1 |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare Account ID ([where to find it](https://developers.cloudflare.com/fundamentals/account/find-account-and-zone-ids/)) |
+| `D1_DATABASE_ID` | The database_id from Step 2 |
+
+**Step 4 — Push to main.** CI auto-builds, applies SQL migrations, and deploys:
+
+```bash
+git push origin main
+```
+
+**Step 5 — Create your first account:**
+
+Go to **Actions** → **CI** → **Run workflow** → check the ☑️ **"Temporarily open registration"** box → **Run workflow**. After the deploy finishes, open your workers.dev URL and register. Then run the workflow again **without** the checkbox to close registration.
+
+That's it. Every future `git push origin main` auto-deploys, and new `sql/*.sql` migration files apply automatically.
 
 ## Install the Browser Extension
 
