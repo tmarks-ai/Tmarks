@@ -87,31 +87,51 @@ class SqliteD1Statement {
 }
 
 export class SqliteD1Database {
-  /** Parameter property avoided: apps/server runs via --experimental-strip-types
-   * (erasable syntax only), which rejects constructor parameter properties. */
+  /** Parameter property avoided: apps/server runs via tsx / erasable syntax. */
   readonly sqlite: SqliteDatabase
 
   constructor(sqlite: SqliteDatabase) {
     this.sqlite = sqlite
   }
 
+  /**
+   * Serializes concurrent batches. The BEGIN..COMMIT section spans await
+   * points on this shared connection; without the gate a second batch's
+   * BEGIN landing inside that window throws ("cannot start a transaction
+   * within a transaction") and the loser's ROLLBACK would silently discard
+   * the winner's writes. Workers D1 batches are atomic server-side — the
+   * promise-chain mutex mirrors that. Sequential callers are unaffected.
+   */
+  private batchGate: Promise<void> = Promise.resolve()
+
   prepare(sql: string): SqliteD1Statement {
     return new SqliteD1Statement(this.sqlite, sql)
   }
 
   async batch(statements: SqliteD1Statement[]): Promise<unknown[]> {
-    this.sqlite.exec('BEGIN')
-    try {
-      const results: unknown[] = []
-      for (const statement of statements) {
-        results.push(await statement.run())
+    const release = this.batchGate
+    const run = (async () => {
+      await release
+      this.sqlite.exec('BEGIN')
+      try {
+        const results: unknown[] = []
+        for (const statement of statements) {
+          results.push(await statement.run())
+        }
+        this.sqlite.exec('COMMIT')
+        return results
+      } catch (error) {
+        this.sqlite.exec('ROLLBACK')
+        throw error
       }
-      this.sqlite.exec('COMMIT')
-      return results
-    } catch (error) {
-      this.sqlite.exec('ROLLBACK')
-      throw error
-    }
+    })()
+    // Gate settles regardless of outcome so one failed batch cannot poison
+    // every later one.
+    this.batchGate = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
   }
 }
 

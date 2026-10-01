@@ -79,21 +79,38 @@ class SqliteD1Database {
     return new SqliteD1Statement(this.sqlite, sql)
   }
 
+  /**
+   * Serializes concurrent batches (mirrors apps/server's adapter): the
+   * BEGIN..COMMIT section spans await points on this shared connection, so
+   * a second batch interleaving its BEGIN would throw and its ROLLBACK
+   * could discard the first batch's writes. Sequential tests unaffected.
+   */
+  private batchGate: Promise<void> = Promise.resolve()
+
   async batch(statements: SqliteD1Statement[]): Promise<unknown[]> {
     // D1 batches are atomic; mirror that so a failing statement cannot leave
     // half a batch applied and mask ordering bugs.
-    this.sqlite.exec('BEGIN')
-    try {
-      const results: unknown[] = []
-      for (const statement of statements) {
-        results.push(await statement.run())
+    const release = this.batchGate
+    const run = (async () => {
+      await release
+      this.sqlite.exec('BEGIN')
+      try {
+        const results: unknown[] = []
+        for (const statement of statements) {
+          results.push(await statement.run())
+        }
+        this.sqlite.exec('COMMIT')
+        return results
+      } catch (error) {
+        this.sqlite.exec('ROLLBACK')
+        throw error
       }
-      this.sqlite.exec('COMMIT')
-      return results
-    } catch (error) {
-      this.sqlite.exec('ROLLBACK')
-      throw error
-    }
+    })()
+    this.batchGate = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
   }
 }
 

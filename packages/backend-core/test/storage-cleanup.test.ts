@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+﻿import { afterEach, describe, expect, it } from 'vitest'
 import { checkMigrationsApplied } from '../src/lib/migration-gate'
 import { permanentDeleteBookmark } from '../src/lib/bookmarks/bookmark-trash'
 import { drainStorageCleanupJobs, storageCleanupInsert } from '../src/lib/storage-cleanup'
@@ -34,8 +34,8 @@ function r2(options: { failDelete?: boolean } = {}) {
   }
 }
 
-function enqueue(h: SqliteD1Harness, key: string, kind: 'snapshot' | 'asset'): void {
-  h.db.batch(storageCleanupInsert(h.db, [{ storageKey: key, kind, userId: USER }], NOW))
+async function enqueue(h: SqliteD1Harness, key: string, kind: 'snapshot' | 'asset'): Promise<void> {
+  await h.db.batch(storageCleanupInsert(h.db, [{ storageKey: key, kind, userId: USER }], NOW))
 }
 
 function job(h: SqliteD1Harness, key: string): { attempts: number; next_retry_at: string; last_error: string | null } {
@@ -99,7 +99,7 @@ describe('storage cleanup outbox', () => {
     const h = db()
     const bucket = r2()
     const key = 'snapshots/u/bm-1/one.html'
-    enqueue(h, key, 'snapshot')
+    await enqueue(h, key, 'snapshot')
 
     const result = await drainStorageCleanupJobs({ DB: h.db, SNAPSHOTS: bucket.binding }, { now: new Date(NOW) })
 
@@ -111,7 +111,7 @@ describe('storage cleanup outbox', () => {
     const h = db()
     const bucket = r2({ failDelete: true })
     const key = 'snapshots/u/bm-1/one.html'
-    enqueue(h, key, 'snapshot')
+    await enqueue(h, key, 'snapshot')
 
     const result = await drainStorageCleanupJobs({ DB: h.db, SNAPSHOTS: bucket.binding }, { now: new Date(NOW) })
 
@@ -124,7 +124,7 @@ describe('storage cleanup outbox', () => {
     const h = db()
     const bucket = r2({ failDelete: true })
     const key = 'snapshots/u/bm-1/one.html'
-    enqueue(h, key, 'snapshot')
+    await enqueue(h, key, 'snapshot')
     // One attempt short of the dead-letter threshold.
     h.sqlite.prepare('UPDATE storage_cleanup_jobs SET attempts = 23 WHERE storage_key = ?').run(key)
 
@@ -146,7 +146,7 @@ describe('storage cleanup outbox', () => {
     const h = db()
     const bucket = r2()
     const key = `assets/favicon/${ASSET_HASH}`
-    enqueue(h, key, 'asset')
+    await enqueue(h, key, 'asset')
     const now = new Date().toISOString()
     h.sqlite
       .prepare(
