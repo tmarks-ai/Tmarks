@@ -25,9 +25,8 @@ coverage
 
 # Agent / MCP tooling scratch output
 .playwright-mcp
-# ZCode 本地状态忽略,但 skills 是团队共享资产(契约有 CI 测试锁定)
-.zcode/*
-!.zcode/skills/
+# ZCode 内部状态(计划文件等)——skills 已移至根目录 skills/(用户可见)
+.zcode/
 
 # GUI test / manual QA scratch output
 gui-test-screenshots/
