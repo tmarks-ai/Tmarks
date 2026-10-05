@@ -16,10 +16,11 @@ FTS5 表。测试夹具（`packages/backend-core/test/helpers/sqlite-migrations.
 
 - **已应用的文件名与内容一律不可改**：wrangler 的 d1_migrations 账本按文件名
   记账，改内容让旧库拿不到变更，改名让旧库重放撞表。
-- **外键（FK）声明在 D1 上不保证级联执行**——虽然 schema 声明了 `ON DELETE
-  CASCADE/SET NULL`，D1 的 FK 语义与本地 SQLite 不完全一致（见 CONTRIBUTING
-  「Workers platform limits」节）。每个删除路径都应手动删子行，不要假设
-  cascade 替你完成。
+- **外键（FK）在 D1 上默认强制执行**——等同 `PRAGMA foreign_keys = on`，
+  schema 声明的 `ON DELETE CASCADE/SET NULL` 动作随之生效；本地适配器
+  （apps/server）与测试夹具均已对齐（R8 IN-1，此前 OFF 造成"本地绿/线上
+  炸"）。删除路径仍应手动删子行作为纵深防御：不依赖 cascade，让行为在
+  任何执行环境下显式一致（见 CONTRIBUTING「Workers platform limits」节）。
 - 新结构变更追加 `09_<主题>.sql`、`10_…`（序号接续、域写进文件名；08 已被
   `08_storage_cleanup.sql` 占用），与既有域文件的编号体系自然衔接。
 - 域内新增的小型 DDL（如索引）可直接追加到既有域文件**仅当该文件尚未被任何

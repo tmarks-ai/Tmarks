@@ -110,8 +110,10 @@ export function DataSection({ t }: { t: TFunc }): React.ReactElement {
   const { t: tc } = useTranslation('common')
   const toast = useToastStore.getState()
   const [exporting, setExporting] = useState(false)
-  // 优先用分页响应的 meta.count(首页 length 只有 30,会让大库误显示"30 条可用")。
-  const displayCount = bookmarkData?.meta?.count ?? bookmarkData?.bookmarks?.length ?? 0
+  // R8 WE-6: meta.count 是当前页的行数(服务端分页默认 100),不是总数——
+  // 大库会永远显示"100 条可用"。导出本身走全量游标,不受此影响;
+  // 这里只报告已加载到缓存的规模,并如实标注"已加载"。
+  const displayCount = bookmarkData?.bookmarks?.length ?? 0
   const handleExport = async () => {
     setExporting(true)
     try {

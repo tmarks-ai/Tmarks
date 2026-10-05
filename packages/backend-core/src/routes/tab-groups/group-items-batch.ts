@@ -1,6 +1,6 @@
 import type { Context } from 'hono'
 import type { AppEnv } from '../../lib/env'
-import { badRequest, internalError, notFound, success } from '../../lib/response'
+import { badRequest, forbidden, internalError, notFound, success } from '../../lib/response'
 import { sanitizeString, sanitizeUrl } from '../../lib/validation'
 import { generateUUID } from '../../lib/crypto'
 import { emitSyncChange } from '../../lib/sync/sync-emit'
@@ -9,6 +9,7 @@ interface TabGroupRefRow {
   id: string
   user_id: string
   title: string
+  is_locked: number
 }
 
 interface TabGroupItemRow {
@@ -48,11 +49,14 @@ export async function groupItemsBatchAddHandler(c: Context<AppEnv>): Promise<Res
 
     const group = await c.env.DB
       .prepare(
-        'SELECT id, user_id, title FROM tab_groups WHERE id = ? AND user_id = ? AND (is_deleted IS NULL OR is_deleted = 0)'
+        'SELECT id, user_id, title, is_locked FROM tab_groups WHERE id = ? AND user_id = ? AND (is_deleted IS NULL OR is_deleted = 0)'
       )
       .bind(groupId, userId)
       .first<TabGroupRefRow>()
     if (!group) return notFound('Tab group not found')
+    // R8 BR-3/CA-2: locked groups reject all mutations except the unlock
+    // operation itself — batch-appending items bypassed the lock.
+    if (group.is_locked) return forbidden('Tab group is locked', 'RESOURCE_LOCKED')
 
     const maxPositionResult = await c.env.DB
       .prepare('SELECT MAX(position) as max_position FROM tab_group_items WHERE group_id = ?')

@@ -44,7 +44,11 @@ export function useDeleteBookmarkFolder() {
     mutationFn: (id: string) => bookmarkFoldersService.deleteFolder(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [BOOKMARK_FOLDERS_QUERY_KEY] })
-      await queryClient.invalidateQueries({ queryKey: ['bookmarks'] })
+      // R8 WS-1: 删除会把行移回根目录并 bump updated_at——行集变了,已翻页的
+      // 视图按旧游标 invalidate 重取会造成页边界重复/漏行(useBookmarks.ts 注释
+      // 明文记录的 reset 纪律)。更新半边不受影响(PATCH 不触书签行),保持
+      // invalidate 以免丢失翻页位置。
+      await queryClient.resetQueries({ queryKey: ['bookmarks'] })
     },
   })
 }

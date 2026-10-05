@@ -1,5 +1,5 @@
 import { db as defaultDb } from '../db'
-import { saveBookmarkLocal } from '../db/bookmarks'
+import { buildBookmarkLookupIndex, saveBookmarkLocal } from '../db/bookmarks'
 import type { TMarkDB } from '../db'
 import { dedupeImportBookmarks, type DuplicatePolicy, type ImportBookmarkDraft } from './types'
 
@@ -28,6 +28,10 @@ export async function executeImport(
   const liveExisting = existing.filter((b) => !b.deleted_at && b.pending_op !== 'delete')
   const deduped = dedupeImportBookmarks(input, liveExisting.map((bookmark) => bookmark.url), options.duplicatePolicy ?? 'skip')
   const drafts = deduped.items
+  // R8 TA-3: 预扫一次构建归一化 URL → 活行索引,循环内 O(1) 命中——此前每存
+  // 一次都 toArray() 全表反序列化,20k 书签导入 ~2e8 次归一化(执行层复活了
+  // types.ts 解析层修掉的冻结)。
+  const lookup = buildBookmarkLookupIndex(existing)
 
   const result: ImportExecuteResult = { imported: 0, skipped: deduped.skipped, failed: 0, errors: [] }
   for (let index = 0; index < drafts.length; index++) {
@@ -39,6 +43,7 @@ export async function executeImport(
         description: draft.description,
         folder_path: draft.folderPath,
         tags: draft.tags,
+        existingIndex: lookup,
       })
       result.imported++
     } catch (error) {

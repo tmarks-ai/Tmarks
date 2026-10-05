@@ -38,7 +38,12 @@ function repairJsonCandidate(input: string): string {
 
 function extractJsonCandidates(input: string): string[] {
   const candidates: string[] = []
-  for (let start = 0; start < input.length; start += 1) {
+  // R8 CA-10: cap the number of scan starts. Every '{'/'[' scanned the
+  // remainder of a 2MB hostile response to its end, making the loop O(n²) —
+  // enough to freeze the popup for minutes. 16 candidate starts is generous
+  // for any real fenced/mixed AI response; past that we bail.
+  const MAX_CANDIDATE_STARTS = 16
+  for (let start = 0; start < input.length && candidates.length < MAX_CANDIDATE_STARTS; start += 1) {
     if (input[start] !== '{' && input[start] !== '[') continue
     const candidate = extractBalancedJsonValue(input, start)
     if (candidate) candidates.push(candidate)

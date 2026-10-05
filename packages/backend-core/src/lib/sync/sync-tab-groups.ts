@@ -34,6 +34,20 @@ export async function applyTabGroupOperation(
     return { ok: false, reason: 'The entity id belongs to a different account.' }
   }
 
+  // R8 BR-3/CA-2: locked groups reject all mutations except the unlock
+  // operation itself — the sync push face bypassed the lock entirely, so an
+  // extension edit to a web-locked group was silently accepted. Terminal code
+  // + server state so the client can "accept remote" to recover.
+  if (owner) {
+    const existing = await db
+      .prepare('SELECT is_locked FROM tab_groups WHERE id = ? AND user_id = ?')
+      .bind(entityId, userId)
+      .first<{ is_locked: number }>()
+    if (existing?.is_locked) {
+      return await rejectLockedGroup(db, userId, entityId)
+    }
+  }
+
   // Parent must belong to this user, mirroring the REST create/update routes;
   // a cross-user parent would corrupt the tree and leak titles via listings.
   // REST(batch-update) 同口径的自父/环防护(tab_groups 无 folders 的两级结构
@@ -43,8 +57,11 @@ export async function applyTabGroupOperation(
     if (payload.parent_id === entityId) {
       return await rejectParentTree(db, userId, entityId, 'A tab group cannot be its own parent.')
     }
+    // R8 BR-1 同根因:已删(回收站中)的组不能作为新 parent。
     const parent = await db
-      .prepare('SELECT id FROM tab_groups WHERE id = ? AND user_id = ?')
+      .prepare(
+        'SELECT id FROM tab_groups WHERE id = ? AND user_id = ? AND (is_deleted IS NULL OR is_deleted = 0)',
+      )
       .bind(payload.parent_id, userId)
       .first<{ id: string }>()
     if (!parent) return { ok: false, reason: 'The parent tab group was not found for this account.' }
@@ -154,6 +171,21 @@ async function rejectParentTree(
     ok: false,
     code: 'INVALID_PARENT_TREE',
     reason,
+    ...(serverState ? { payload: serverState } : {}),
+  }
+}
+
+/** 锁定拒绝(R8 BR-3/CA-2):终态 code + 服务器当前状态(供客户端"接受远端")。 */
+async function rejectLockedGroup(
+  db: D1Database,
+  userId: string,
+  entityId: string
+): Promise<SyncApplyResult> {
+  const serverState = await loadServerPayload(db, userId, 'tab_group', entityId)
+  return {
+    ok: false,
+    code: 'RESOURCE_LOCKED',
+    reason: 'Tab group is locked.',
     ...(serverState ? { payload: serverState } : {}),
   }
 }

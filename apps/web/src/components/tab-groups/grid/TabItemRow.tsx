@@ -21,13 +21,11 @@ const GLOBE_SVG =
 function faviconSrc(item: TabGroupItemDTO): string {
   const stored = safeHttpUrl(item.favicon)
   if (stored) return stored
-  try {
-    const parsed = new URL(item.url)
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return ''
-    return `https://www.google.com/s2/favicons?domain=${parsed.hostname}&sz=32`
-  } catch {
-    return ''
-  }
+  // R8 WE-8: no third-party favicon fallback. This is a self-hosted privacy
+  // product — leaking every saved domain to google.com on rows without a
+  // stored favicon contradicts the extension side, which explicitly refuses
+  // the same call (tab-collection.ts). Fall back to the local globe glyph.
+  return ''
 }
 
 interface TabItemRowProps {

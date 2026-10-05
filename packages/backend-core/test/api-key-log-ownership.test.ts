@@ -1,89 +1,51 @@
 import { describe, expect, it } from 'vitest'
-import { getApiKeyLogs, getApiKeyStats } from '@tmarks/backend-core'
+import { getApiKeyStats } from '@tmarks/backend-core'
+import { createSqliteD1 } from './helpers/sqlite-d1'
 
-type ApiLog = {
-  api_key_id: string
-  user_id: string
-  endpoint: string
-  method: string
-  status: number
-  ip: string | null
-  created_at: string
-}
+/**
+ * R8 BT-6 + CA-11: the old version of this file mocked the DB with a class
+ * that re-implemented the `WHERE api_key_id = ? AND user_id = ?` predicate in
+ * TypeScript — the production SQL never executed, so weakening the predicate
+ * (e.g. dropping user_id) stayed green. Now the stats query runs against real
+ * SQLite (the logs ROUTE was removed as dead code with getApiKeyLogs).
+ */
+describe('API key usage statistics ownership (real SQLite)', () => {
+  it('scopes statistics by owner: another user’s rows never leak into totals', async () => {
+    const h = createSqliteD1('owner')
+    try {
+      // FK enforcement (R8 IN-1): api_key_logs references api_keys AND users —
+      // seed both parent rows first; the harness seeds the owner only.
+      h.sqlite
+        .prepare(`INSERT INTO users (id, username, password_hash) VALUES ('other', 'other', 'x')`)
+        .run()
+      h.sqlite
+        .prepare(
+          `INSERT INTO api_keys (id, user_id, key_hash, key_prefix, name, permissions)
+           VALUES ('key-1', 'owner', 'hash-1', 'tmk_live_x', 'test key', '["bookmarks.read"]')`,
+        )
+        .run()
+      const insert = h.sqlite.prepare(
+        `INSERT INTO api_key_logs (api_key_id, user_id, endpoint, method, status, ip, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      )
+      insert.run('key-1', 'owner', '/bookmarks', 'GET', 200, '203.0.113.10', '2026-08-03T02:00:00.000Z')
+      insert.run('key-1', 'other', '/private', 'GET', 500, '203.0.113.20', '2026-08-03T03:00:00.000Z')
+      insert.run('key-1', 'owner', '/tags', 'POST', 201, null, '2026-08-03T01:00:00.000Z')
 
-class ApiKeyLogDb {
-  constructor(private readonly rows: ApiLog[]) {}
+      // 'other' 的行虽更晚,但归属过滤必须把它排除在 owner 的统计之外。
+      await expect(getApiKeyStats('key-1', 'owner', h.db)).resolves.toMatchObject({
+        total_requests: 2,
+        last_used_at: '2026-08-03T02:00:00.000Z',
+        last_used_ip: '203.0.113.10',
+      })
 
-  prepare(sql: string) {
-    return new ApiKeyLogStatement(this, sql)
-  }
-
-  select(sql: string, values: unknown[]) {
-    const normalized = sql.replace(/\s+/g, ' ').trim().toLowerCase()
-    const apiKeyId = String(values[0])
-    const userId = String(values[1])
-    const scoped = this.rows
-      .filter((row) => row.api_key_id === apiKeyId && row.user_id === userId)
-      .sort((left, right) => right.created_at.localeCompare(left.created_at))
-
-    if (normalized.includes('count(*)')) {
-      return {
-        total_requests: scoped.length,
-        last_used_at: scoped[0]?.created_at ?? null,
-        last_used_ip: scoped[0]?.ip ?? null,
-      }
+      await expect(getApiKeyStats('key-1', 'missing-owner', h.db)).resolves.toEqual({
+        total_requests: 0,
+        last_used_at: null,
+        last_used_ip: null,
+      })
+    } finally {
+      h.close()
     }
-
-    return { results: scoped.slice(0, Number(values[2])) }
-  }
-}
-
-class ApiKeyLogStatement {
-  private values: unknown[] = []
-
-  constructor(
-    private readonly db: ApiKeyLogDb,
-    private readonly sql: string,
-  ) {}
-
-  bind(...values: unknown[]) {
-    this.values = values
-    return this
-  }
-
-  async all<T>() {
-    return this.db.select(this.sql, this.values) as T
-  }
-
-  async first<T>() {
-    return this.db.select(this.sql, this.values) as T
-  }
-}
-
-describe('API key log ownership', () => {
-  const rows: ApiLog[] = [
-    { api_key_id: 'key-1', user_id: 'owner', endpoint: '/bookmarks', method: 'GET', status: 200, ip: '203.0.113.10', created_at: '2026-08-03T02:00:00.000Z' },
-    { api_key_id: 'key-1', user_id: 'other', endpoint: '/private', method: 'GET', status: 500, ip: '203.0.113.20', created_at: '2026-08-03T03:00:00.000Z' },
-    { api_key_id: 'key-1', user_id: 'owner', endpoint: '/tags', method: 'POST', status: 201, ip: null, created_at: '2026-08-03T01:00:00.000Z' },
-  ]
-
-  it('scopes logs by owner and applies the requested limit', async () => {
-    const logs = await getApiKeyLogs('key-1', 'owner', new ApiKeyLogDb(rows) as unknown as D1Database, 1)
-    expect(logs).toHaveLength(1)
-    expect(logs[0]).toMatchObject({ endpoint: '/bookmarks', user_id: 'owner' })
-  })
-
-  it('scopes statistics by owner and returns zero values for an owner with no logs', async () => {
-    const db = new ApiKeyLogDb(rows) as unknown as D1Database
-    await expect(getApiKeyStats('key-1', 'owner', db)).resolves.toMatchObject({
-      total_requests: 2,
-      last_used_at: '2026-08-03T02:00:00.000Z',
-      last_used_ip: '203.0.113.10',
-    })
-    await expect(getApiKeyStats('key-1', 'missing-owner', db)).resolves.toEqual({
-      total_requests: 0,
-      last_used_at: null,
-      last_used_ip: null,
-    })
   })
 })

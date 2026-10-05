@@ -31,17 +31,25 @@ export interface SqliteDatabase {
 
 const D1_MAX_BOUND_PARAMS = 100
 
+/**
+ * Promise-chain mutex slot: the caller takes the slot synchronously (FIFO by
+ * call order) and awaits the previous holder before running.
+ */
+type GateAcquire = () => Promise<() => void>
+
 class SqliteD1Statement {
-  /** Parameter properties avoided: apps/server runs via --experimental-strip-types
-   * (erasable syntax only), which rejects them. */
+  /** Parameter properties avoided by convention (see comment on the class below). */
   private readonly db: SqliteDatabase
   private readonly sql: string
   private readonly params: unknown[]
+  /** Serializes direct execution against the database's gate (batch() runs raw). */
+  private readonly acquire: GateAcquire
 
-  constructor(db: SqliteDatabase, sql: string, params: unknown[] = []) {
+  constructor(db: SqliteDatabase, sql: string, params: unknown[] = [], acquire?: GateAcquire) {
     this.db = db
     this.sql = sql
     this.params = params
+    this.acquire = acquire ?? (async () => () => {})
     if (params.length > D1_MAX_BOUND_PARAMS) {
       throw new Error(
         `D1 platform limit: ${params.length} bound parameters exceed 100. SQL: ${sql.slice(0, 120)}`,
@@ -50,7 +58,7 @@ class SqliteD1Statement {
   }
 
   bind(...params: unknown[]): SqliteD1Statement {
-    return new SqliteD1Statement(this.db, this.sql, params)
+    return new SqliteD1Statement(this.db, this.sql, params, this.acquire)
   }
 
   private normalized(): unknown[] {
@@ -61,17 +69,27 @@ class SqliteD1Statement {
     })
   }
 
-  async first<T = Record<string, unknown>>(): Promise<T | null> {
+  private async gated<T>(fn: () => T): Promise<T> {
+    const release = await this.acquire()
+    try {
+      return fn()
+    } finally {
+      release()
+    }
+  }
+
+  /** Gate-free executors — batch() runs these inside its own held gate. */
+  rawFirst<T = Record<string, unknown>>(): T | null {
     const row = this.db.prepare(this.sql).get(...this.normalized())
     return (row as T) ?? null
   }
 
-  async all<T = Record<string, unknown>>(): Promise<{ results: T[]; success: true }> {
+  rawAll<T = Record<string, unknown>>(): { results: T[]; success: true } {
     const rows = this.db.prepare(this.sql).all(...this.normalized())
     return { results: rows as T[], success: true }
   }
 
-  async run(): Promise<{ success: true; meta: { changes: number; last_row_id: number } }> {
+  rawRun(): { success: true; meta: { changes: number; last_row_id: number } } {
     const result = this.db.prepare(this.sql).run(...this.normalized()) as {
       changes?: number | bigint
       lastInsertRowid?: number | bigint
@@ -84,10 +102,22 @@ class SqliteD1Statement {
       },
     }
   }
+
+  async first<T = Record<string, unknown>>(): Promise<T | null> {
+    return this.gated(() => this.rawFirst<T>())
+  }
+
+  async all<T = Record<string, unknown>>(): Promise<{ results: T[]; success: true }> {
+    return this.gated(() => this.rawAll<T>())
+  }
+
+  async run(): Promise<{ success: true; meta: { changes: number; last_row_id: number } }> {
+    return this.gated(() => this.rawRun())
+  }
 }
 
 export class SqliteD1Database {
-  /** Parameter property avoided: apps/server runs via tsx / erasable syntax. */
+  /** Parameter property avoided by convention (see the statement class note). */
   readonly sqlite: SqliteDatabase
 
   constructor(sqlite: SqliteDatabase) {
@@ -95,43 +125,44 @@ export class SqliteD1Database {
   }
 
   /**
-   * Serializes concurrent batches. The BEGIN..COMMIT section spans await
-   * points on this shared connection; without the gate a second batch's
-   * BEGIN landing inside that window throws ("cannot start a transaction
-   * within a transaction") and the loser's ROLLBACK would silently discard
-   * the winner's writes. Workers D1 batches are atomic server-side — the
-   * promise-chain mutex mirrors that. Sequential callers are unaffected.
+   * Serializes ALL statements — single and batch. Real D1 runs each single
+   * statement as its own implicit transaction and batches atomically
+   * server-side; on this shared connection the old gate only covered
+   * batch↔batch, so a single-statement write could land inside an in-flight
+   * batch's BEGIN..COMMIT window and be swept into its ROLLBACK — silently
+   * discarding a write whose caller already got `success` (R8 BL-6).
    */
-  private batchGate: Promise<void> = Promise.resolve()
+  private opGate: Promise<void> = Promise.resolve()
+
+  private acquireGate(): Promise<() => void> {
+    const prev = this.opGate
+    let release!: () => void
+    this.opGate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    return prev.then(() => release)
+  }
 
   prepare(sql: string): SqliteD1Statement {
-    return new SqliteD1Statement(this.sqlite, sql)
+    return new SqliteD1Statement(this.sqlite, sql, [], this.acquireGate.bind(this))
   }
 
   async batch(statements: SqliteD1Statement[]): Promise<unknown[]> {
-    const release = this.batchGate
-    const run = (async () => {
-      await release
+    const release = await this.acquireGate()
+    try {
       this.sqlite.exec('BEGIN')
-      try {
-        const results: unknown[] = []
-        for (const statement of statements) {
-          results.push(await statement.run())
-        }
-        this.sqlite.exec('COMMIT')
-        return results
-      } catch (error) {
-        this.sqlite.exec('ROLLBACK')
-        throw error
+      const results: unknown[] = []
+      for (const statement of statements) {
+        results.push(statement.rawRun())
       }
-    })()
-    // Gate settles regardless of outcome so one failed batch cannot poison
-    // every later one.
-    this.batchGate = run.then(
-      () => undefined,
-      () => undefined,
-    )
-    return run
+      this.sqlite.exec('COMMIT')
+      return results
+    } catch (error) {
+      this.sqlite.exec('ROLLBACK')
+      throw error
+    } finally {
+      release()
+    }
   }
 }
 
@@ -146,7 +177,12 @@ export function createPersistentD1(dbPath: string, migrationsDir: string): Sqlit
 
   const sqlite = new DatabaseSync(resolve(dbPath))
   sqlite.exec('PRAGMA journal_mode = WAL')
-  sqlite.exec('PRAGMA foreign_keys = OFF') // matches D1 semantics
+  // R8 IN-1: D1 enforces foreign keys by default (equivalent to
+  // `PRAGMA foreign_keys = on`) — the old OFF made this adapter MORE lenient
+  // than production, so constraint violations surfaced only after deploying
+  // to Workers. The schema's FKs all carry ON DELETE actions, matching the
+  // manual cascades the code already performs.
+  sqlite.exec('PRAGMA foreign_keys = ON')
 
   // Migration ledger (same contract as wrangler's d1_migrations table)
   sqlite.exec(`CREATE TABLE IF NOT EXISTS _migrations (name TEXT PRIMARY KEY, applied_at TEXT NOT NULL)`)

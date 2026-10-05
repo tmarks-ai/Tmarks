@@ -205,3 +205,70 @@ describe('sync summary endpoint', () => {
     expect(body.data.pendingOperations).toBe(2)
   })
 })
+
+/**
+ * R8 BT-1 回归网:memory mock 用 TS 重实现了 7 条聚合 SQL,summary 路由的 SQL
+ * 从未在真 SQLite 上执行——harness 的 batch() 修复(SELECT 语句返回行)后,
+ * 同一 handler 现在可以打到真实迁移出的 schema 上。
+ */
+describe('sync summary endpoint against real SQLite (R8 BT-1)', () => {
+  it('aggregates live rows, soft-delete bounds and the sync_changes backlog with real SQL', async () => {
+    const { createSqliteD1 } = await import('./helpers/sqlite-d1')
+    const harness = createSqliteD1(userId)
+    try {
+      const now = new Date('2026-08-04T19:20:31.000Z').toISOString()
+      const bookmark = harness.sqlite.prepare(
+        `INSERT INTO bookmarks (id, user_id, title, url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      bookmark.run('b-live', userId, 'live', 'https://live.example', now, now)
+      bookmark.run('b-dead', userId, 'trash', 'https://trash.example', now, now)
+      harness.sqlite
+        .prepare(`UPDATE bookmarks SET deleted_at = ? WHERE id = 'b-dead'`)
+        .run(now)
+      harness.sqlite.prepare(`INSERT INTO tags (id, user_id, name) VALUES ('t-1', ?, 'AI')`).run(userId)
+      harness.sqlite.prepare(`INSERT INTO tab_groups (id, user_id, title) VALUES ('g-1', ?, 'G')`).run(userId)
+      harness.sqlite
+        .prepare(`INSERT INTO tab_group_items (id, group_id, title, url, position) VALUES ('i-1', 'g-1', 'I', 'https://item.example', 0)`)
+        .run()
+      const change = harness.sqlite.prepare(
+        `INSERT INTO sync_changes (change_id, user_id, device_id, entity_type, entity_id, operation, revision, payload_json, changed_at)
+         VALUES (?, ?, 'd1', 'bookmark', ?, 'upsert', 'rev', 'null', ?)`,
+      )
+      change.run('c-1', userId, 'b-live', now)
+      change.run('c-2', userId, 'b-live', now)
+
+      const { Hono } = await import('hono')
+      const { syncSummaryHandler: handler } = await import('../src/routes/sync/summary')
+      const app = new Hono<AppEnv>()
+      app.use('*', async (c, next) => {
+        c.set('auth', { user_id: userId, auth_type: 'jwt' })
+        await next()
+      })
+      app.get('/api/v1/sync/summary', handler as never)
+
+      const res = await app.request('/api/v1/sync/summary?after_id=1', {}, { DB: harness.db } as unknown as Env)
+      expect(res.status).toBe(200)
+      const body = (await res.json()) as {
+        data: {
+          entities: {
+            bookmarks: { count: number; maxUpdatedAt: string | null }
+            bookmark_folders: { count: number }
+            tags: { count: number }
+            tab_groups: { count: number }
+            tab_group_items: { count: number }
+          }
+          pendingOperations: number
+          cursorBound: number
+        }
+      }
+      expect(body.data.entities.bookmarks).toEqual({ count: 1, maxUpdatedAt: now })
+      expect(body.data.entities.tags.count).toBe(1)
+      expect(body.data.entities.tab_groups.count).toBe(1)
+      expect(body.data.entities.tab_group_items.count).toBe(1)
+      expect(body.data.pendingOperations).toBe(1) // sync_changes.id=2 在 after_id=1 之后
+      expect(body.data.cursorBound).toBe(2)
+    } finally {
+      harness.close()
+    }
+  })
+})

@@ -1,5 +1,5 @@
 import type { SQLParam } from '../types'
-import { chunkForD1In } from '../d1-chunk'
+import { chunkForD1In, D1_MAX_BIND_PARAMS } from '../d1-chunk'
 import { BOOKMARK_STATUS_COLUMNS, getFolderFilterClause, parseBookmarkStatus } from './bookmark-list'
 
 export async function fetchBookmarkTags(
@@ -56,7 +56,15 @@ export async function fetchRelatedTagIds(
 
   const selectedPlaceholders = selectedTagIds.map(() => '?').join(',')
   const params: SQLParam[] = [userId, ...selectedTagIds, ...selectedTagIds]
-  const folderClause = getFolderFilterClause(folderId, params)
+  // R8 BL-2: 本查询绑定 user + 选中标签 ×2(IN + NOT IN) + folder ids + count,
+  // 总和必须 ≤ 100——40 个标签时 folder 上限收窄到 18,超限抛
+  // BookmarkFilterLimitError(路由映射 400),否则真实 D1 上必 500。
+  const folderClause = getFolderFilterClause(
+    folderId,
+    params,
+    'b.folder_id',
+    D1_MAX_BIND_PARAMS - (2 + 2 * selectedTagIds.length),
+  )
   const statusFilter = parseBookmarkStatus(status ?? null)
   const statusClause = statusFilter ? `AND ${BOOKMARK_STATUS_COLUMNS[statusFilter]} = 1` : ''
 

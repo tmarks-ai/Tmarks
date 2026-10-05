@@ -3,7 +3,9 @@ import { chunkForD1In } from '../d1-chunk'
 
 // Mirrors POST /tags' sanitizeString(name, 50): the bookmark plane reaches the
 // same storage through resolveOrCreateTagIds and must not bypass the cap.
-const TAG_NAME_MAX_LENGTH = 50
+// Exported for the sync plane (R8 BL-4): its tag_names path sliced at 64 and
+// minted overlong rows.
+export const TAG_NAME_MAX_LENGTH = 50
 // A bookmark carrying more tags than this is a client bug, not curation.
 const TAGS_PER_BOOKMARK_MAX = 100
 

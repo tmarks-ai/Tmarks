@@ -51,36 +51,10 @@ export function isAssetPath(value: string | null | undefined): value is string {
   return typeof value === 'string' && ASSET_URL_RE.test(value)
 }
 
-/**
- * After rows are deleted, find asset paths nobody references anymore and
- * return their R2 keys for best-effort deletion. Objects are shared across
- * bookmarks/users by content hash, so a reference count — not ownership —
- * decides whether the object is garbage.
- *
- * Single grouped query (NOT one COUNT(*) per path): favicon/cover_image carry
- * no index, so per-path counts were per-path FULL table scans — emptying a
- * few hundred trashed bookmarks issued hundreds of D1 subrequests (free tier
- * caps at 50) and could blow the wall-time budget. One DISTINCT scan of
- * surviving rows + an in-memory diff is bounded by unique URLs instead.
- */
-export async function collectOrphanedAssetKeys(
-  db: D1Database,
-  assetPaths: Array<string | null | undefined>
-): Promise<string[]> {
-  const unique = [...new Set(assetPaths.filter((p): p is string => isAssetPath(p)))]
-  if (unique.length === 0) return []
-  const { results } = await db
-    .prepare(
-      `SELECT DISTINCT favicon AS p FROM bookmarks WHERE favicon IS NOT NULL
-       UNION
-       SELECT DISTINCT cover_image AS p FROM bookmarks WHERE cover_image IS NOT NULL`,
-    )
-    .all<{ p: string }>()
-  const referenced = new Set((results || []).map((row) => row.p))
-  return unique
-    .filter((path) => !referenced.has(path))
-    .map((path) => `assets/${path.slice(ASSET_URL_PREFIX.length)}`)
-}
+// R8 BL-9: collectOrphanedAssetKeys — the no-exclude predecessor of
+// collectOrphanedAssetKeysBeforeDelete (storage-cleanup.ts) — was deleted
+// here: zero production callers, superseded semantics. Its test moved to the
+// successor in test/asset-persist.test.ts.
 
 /** Fire-and-forget wrapper for route handlers (needs c.executionCtx). */
 export function schedulePersistBookmarkImages(

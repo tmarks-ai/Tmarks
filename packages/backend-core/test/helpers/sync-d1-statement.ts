@@ -7,11 +7,17 @@ export class SyncMemoryD1Statement {
     private readonly db: SyncMemoryD1Database,
     /** SQL string exposed so db.batch() can route SELECT vs write statements. */
     readonly sql: string,
-  ) {}
+    values?: unknown[],
+  ) {
+    if (values) this.values = values
+  }
 
+  // R8 BT-9: bind() returns a NEW statement, mirroring real D1 (and the
+  // sqlite-d1 harness) — the old in-place mutation aliased two bound
+  // statements from one prepare() onto the same object, silently executing
+  // the second bind's values for both.
   bind(...values: unknown[]) {
-    this.values = values
-    return this
+    return new SyncMemoryD1Statement(this.db, this.sql, values)
   }
 
   async first<T>() {

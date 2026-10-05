@@ -16,16 +16,24 @@ The product surface is intentionally small:
 
 ```text
 src/
-  auth/          password login, refresh sessions, JWT bootstrap
-  api-key/       key generation, permissions, rate limits, usage logs
-  bookmarks/     bookmark and folder domain logic
-  sync/          Web/Tab incremental synchronization
-  tab-groups/    tab groups and items
-  tags/          tag domain logic
-  preferences/   personal settings
-  cache/         private response cache helpers
-  crypto/        encryption and token helpers
-  routes/        canonical `/api/v1` Hono routes
+  lib/
+    auth/          password login, refresh sessions, JWT bootstrap
+    api-key/       key generation, permissions, rate limits, usage logs
+    bookmarks/     bookmark and folder domain logic (incl. asset persistence)
+    sync/          Web/Tab incremental synchronization (bootstrap/push/pull)
+    tab-groups/    tab group domain logic
+    tags/          tag domain logic
+    preferences/    personal settings
+    import-export/ JSON export collection and streaming
+    net/           outbound fetch guards (SSRF defenses)
+    share/         public share-page settings
+    crypto/        encryption and token helpers
+    storage-cleanup.ts  durable R2-deletion outbox + hourly drain
+    d1-chunk.ts    D1 100-bound-parameter chunking helper
+    safe-wait-until.ts waitUntil adapter tolerating a missing ExecutionContext
+  middleware/      CORS, security headers, JSON body guard, auth, error handler
+  routes/          canonical `/api/v1` Hono route tree
+  app.ts           middleware chain assembly
 ```
 
 The Worker entry point imports `app`, `checkMigrationsApplied`, and `Env` from

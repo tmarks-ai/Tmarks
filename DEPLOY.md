@@ -41,7 +41,7 @@ pnpm exec wrangler deploy --var ALLOW_REGISTRATION:true   # 注册后常规 depl
 | Cloudflare 账号 | 注册 [cloudflare.com](https://cloudflare.com) |
 | D1 数据库 | `wrangler d1 create tmarks-db`，把打印出的 database_id 填入 `apps/worker/wrangler.toml` 的 `database_id = "<your-d1-database-id>"` |
 | R2 存储桶 | `wrangler r2 bucket create tmarks-snapshots`（网页快照存储；漏掉此步 `wrangler deploy` 因桶不存在而失败） |
-| Node.js | ≥ 20.19（根 `package.json` 已声明 engines） |
+| Node.js | ≥ 22.5（根 `package.json` 已声明 engines） |
 | pnpm | ≥ 10（`packageManager: pnpm@10.28.1`） |
 
 ### 1.2 创建 API Token
@@ -312,9 +312,12 @@ $env:CLOUDFLARE_ACCOUNT_ID = ($vars | Where-Object Key -eq 'CLOUDFLARE_ACCOUNT_I
 - `sync_changes`：按实体压实保新（非按龄 TTL）；幂等键 14 天、设备表 90 天
 - R2 免费档 10GB 只是单用户参考值，不是容量保证；大量快照可能产生费用或耗尽额度，需查看 R2 用量并按需清理
 
-> 免费版还有 **50 查询/Worker 调用**上限：一个 100-op 同步推送本身约数百 D1
-> 子请求，会超限失败并走恢复路径。自托管在免费计划上应把大批量同步
-> （如首次全量推送）控制在每调用 ~50 op 以内，或升级到 Workers Paid。
+> 免费版还有 **50 查询/Worker 调用**上限：每个同步 op 实耗 ~7-9 个 D1 查询
+> （幂等占位 + 实体读回 + 归属/查重 + 写入 + sync_change），默认 100-op 推送
+> 在第一批就超预算——500 落入扩展端"网络错误"分支烧光重试预算、打成死信
+> （R8 BL-1/TA-1）。已由 `wrangler.toml` 预置 `SYNC_MAX_BATCH_SIZE=5` 兜底：
+> 服务端对超宽批次返回 400 QUOTA_EXCEEDED，扩展端自动减半 chunk 收敛，
+> 免费档无需任何配置；Workers Paid（1000 查询/调用）可调到 ~120。
 
 ### 9.3 落地页（可选，独立部署）
 

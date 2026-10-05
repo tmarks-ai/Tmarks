@@ -6,8 +6,10 @@ export const logger = {
   log: (...args: LogValue[]) => {
     if (isDev) console.log(...args)
   },
+  // R8 WS-6: error stays audible in production — failures on the auth/refresh/
+  // cache paths used to vanish with zero trace, leaving nothing to debug.
   error: (...args: LogValue[]) => {
-    if (isDev) console.error(...args)
+    console.error(...args)
   },
   warn: (...args: LogValue[]) => {
     if (isDev) console.warn(...args)

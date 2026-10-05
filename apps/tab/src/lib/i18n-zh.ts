@@ -50,7 +50,7 @@ export const zh: Record<string, string> = {
   'notify.collectTitle': 'TMark 采集',
   'notify.collectOk': '已采集 {{count}} 个标签页',
   'notify.syncDoneTitle': 'TMark 同步完成',
-  'notify.syncConflictMsg': '已同步,{{count}} 个冲突已按服务端版本覆盖',
+  'notify.syncConflictMsg': '已同步,检测到 {{count}} 个冲突待审——请在设置的「账户与同步」分区查看,',
   // account section
   'account.title': '账户',
   'account.apiKeyDescription': '使用 Web 设置中创建的 API Key 连接此插件。',

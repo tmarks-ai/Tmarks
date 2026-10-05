@@ -19,12 +19,17 @@ data
 gui-test-screenshots
 .tmp-*
 .dev.vars
+**/.dev.vars
 .cf-deploy.env
 .cloudflare.env
 *.log
 .DS_Store
 .idea
 .vscode
+landing
 landing/dist-ssr
 landing-full-desktop.png
 AUDIT-*.md
+# R8 (main-line P3): git history inflates the build context and does not
+# belong in any image layer.
+.git

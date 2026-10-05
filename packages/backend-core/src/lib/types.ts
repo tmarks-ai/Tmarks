@@ -68,7 +68,12 @@ export interface Tag {
 }
 
 export interface ApiError {
-  code: string
+  // R8 CA-4/BR-4: the server may only emit codes registered in the contract
+  // union — a loose `string` here let OWNERSHIP_CONFLICT ship unregistered
+  // (the extension hard-coded it, masking the drift). The compile-time gate
+  // is backed by test/error-code-registry.test.ts, which also scans the
+  // positional reject()/forbidden() call sites a type cannot reach.
+  code: import('@tmarks/contracts').ApiErrorCode
   message: string
   details?: unknown
   // Error envelopes carry varied detail fields (e.g. `required`/`available`

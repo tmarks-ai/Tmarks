@@ -128,11 +128,17 @@ export async function validateTabGroupItemPayload(
   }
 
   const group = await db
-    .prepare('SELECT id FROM tab_groups WHERE id = ? AND user_id = ? AND is_deleted = 0')
+    .prepare('SELECT id, is_locked FROM tab_groups WHERE id = ? AND user_id = ? AND is_deleted = 0')
     .bind(payload.group_id, userId)
-    .first<{ id: string }>()
+    .first<{ id: string; is_locked: number }>()
   if (!group) {
     return 'Tab group item parent group was not found.'
+  }
+  // R8 BR-3/CA-2: item pushes into a web-locked group are terminal rejections
+  // (VALIDATION_FAILED at the envelope level) instead of silently mutating a
+  // group the web UI promised was frozen.
+  if (group.is_locked) {
+    return 'Tab group is locked.'
   }
   return null
 }

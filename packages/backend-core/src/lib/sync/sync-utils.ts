@@ -1,4 +1,5 @@
 import type {
+  Revision,
   SyncChange,
   SyncCursor,
   SyncEntityType,
@@ -39,9 +40,18 @@ export function decodeCursor(cursor: string | null): number {
 }
 
 export function entityRowToBootstrapChange(entityType: SyncEntityType, row: Record<string, unknown>): SyncChange {
-  const revision = typeof row.revision === 'string' && row.revision
+  // R8 BL-3: emit the entity's REAL tracked revision — or null when the row
+  // predates revision tracking (client treats null as last-write-wins). The
+  // old fallback synthesized `rev_<Date.now()>` for every folder/tag/
+  // tab_group_item snapshot row, so any bootstrap→edit→push cycle compared
+  // the synthetic value against the real registry revision and produced a
+  // guaranteed false conflict (local restore, queue-repair loops, API-key
+  // sync clients).
+  const revision: Revision | null = typeof row.revision === 'string' && row.revision
     ? row.revision
-    : createRevision(String(row.updated_at ?? row.created_at ?? ''))
+    : 'revision' in row
+      ? (row.revision as Revision | null | undefined) ?? null
+      : createRevision(String(row.updated_at ?? row.created_at ?? ''))
 
   return {
     change_id: `bootstrap:${entityType}:${String(row.id)}`,

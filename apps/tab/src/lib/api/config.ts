@@ -13,7 +13,23 @@ export const DEFAULT_API_ORIGIN = import.meta.env.DEV ? 'http://localhost:8787' 
 export async function getApiOrigin(): Promise<string> {
   const item = await chrome.storage.local.get(STORAGE_KEY)
   const stored = item[STORAGE_KEY]
-  return typeof stored === 'string' && stored ? stored : DEFAULT_API_ORIGIN
+  // 读路径同样规范化(R8 TA-2):存量用户存储的尾斜杠形态无需手动迁移。
+  return typeof stored === 'string' && stored ? normalizeApiOrigin(stored) : DEFAULT_API_ORIGIN
+}
+
+/**
+ * 规范化 API 源(R8 TA-2):去尾斜杠/query/hash,保留子路径前缀(反向代理
+ * 的 /tmarks 部署合法)。尾斜杠曾让每个请求打中 `//api/...` 双斜杠路径——
+ * Workers 的 run_worker_first 只认单斜杠 /api/*,SPA HTML 被当成 API 响应,
+ * 队列按 NETWORK_ERROR 烧光重试预算。
+ */
+export function normalizeApiOrigin(origin: string): string {
+  try {
+    const parsed = new URL(origin)
+    return `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/+$/, '')}`
+  } catch {
+    return origin.trim().replace(/\/+$/, '')
+  }
 }
 
 /**
@@ -43,5 +59,6 @@ export async function setApiOrigin(origin: string): Promise<void> {
       `Refusing to use a plaintext http origin for ${parsed.hostname}: the API key would be sent in the clear. Use https.`
     )
   }
-  await chrome.storage.local.set({ [STORAGE_KEY]: origin })
+  // 存储归一化形态(R8 TA-2):尾斜杠在此剥除,读取/桥接两侧同步消费。
+  await chrome.storage.local.set({ [STORAGE_KEY]: normalizeApiOrigin(origin) })
 }

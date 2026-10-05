@@ -32,7 +32,13 @@ export function purgeSnapshotObjects(
         return
       }
       const asset = key.match(/^assets\/(favicon|cover)\/([0-9a-f]{64})$/)
-      if (origin && asset) {
+      // R8 BL-7: `caches` is a Workers-only global — on the Node/Docker host it
+      // is undefined and the bare reference throws a ReferenceError, which the
+      // per-key catch below then swallowed, SKIPPING the R2 delete and the
+      // outbox-row cleanup on that key (the whole immediate path degraded to
+      // the hourly drain with a misleading error log on every asset).
+      // Skip the cache purge there and continue to the R2 deletion.
+      if (origin && asset && typeof caches !== 'undefined') {
         // Awaited inside the waitUntil'd promise (R5-P3): a floating catch can
         // be dropped when the isolate settles. The delete is idempotent — a
         // failure only leaves the immutable asset cached per its existing

@@ -140,8 +140,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 async function isTrustedBridgeOrigin(sender: chrome.runtime.MessageSender): Promise<boolean> {
   try {
     const apiOrigin = await getApiOrigin()
+    if (!apiOrigin) return false
     const origin = sender.origin ?? (sender.url ? new URL(sender.url).origin : null)
-    return Boolean(origin) && origin === apiOrigin
+    // R8 TA-2: compare URL origins, not raw strings — the stored origin may
+    // legitimately carry a sub-path prefix (reverse-proxy /tmarks deploy), and
+    // a trailing slash used to make the equality fail forever. Same-host
+    // comparison keeps cross-site pages rejected.
+    return Boolean(origin) && origin === new URL(apiOrigin).origin
   } catch {
     return false
   }

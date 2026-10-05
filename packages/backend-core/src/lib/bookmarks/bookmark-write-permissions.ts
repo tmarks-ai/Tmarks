@@ -17,7 +17,10 @@ export function requireBookmarkCreatePermissions(
   auth: AuthContext,
   input: BookmarkWriteInput
 ): Response | null {
-  return requireApiKeyPermissions(auth, getBookmarkWritePermissions(input))
+  // R8 CA-6: creating with a folder_path must not demand bookmarks.update —
+  // a create-only key could never file anything into a folder. Only the
+  // folder-creation capability is extra on this plane.
+  return requireApiKeyPermissions(auth, getBookmarkCreatePermissions(input))
 }
 
 /**
@@ -30,7 +33,7 @@ export function requireBookmarkBatchCreatePermissions(
 ): Response | null {
   const required = new Set<string>()
   for (const bookmark of bookmarks) {
-    for (const permission of getBookmarkWritePermissions(bookmark)) {
+    for (const permission of getBookmarkCreatePermissions(bookmark)) {
       required.add(permission)
     }
   }
@@ -43,6 +46,20 @@ export function requireBookmarkUpdatePermissions(
   input: BookmarkWriteInput
 ): Response | null {
   return requireApiKeyPermissions(auth, getBookmarkWritePermissions(input))
+}
+
+function getBookmarkCreatePermissions(input: BookmarkWriteInput): string[] {
+  const permissions: string[] = []
+  if (Array.isArray(input.folder_path) && input.folder_path.length > 0) {
+    permissions.push('bookmark_folders.create')
+  }
+  if (input.tags !== undefined) {
+    permissions.push('tags.create', 'tags.assign')
+  }
+  if (input.tag_ids !== undefined) {
+    permissions.push('tags.assign')
+  }
+  return permissions
 }
 
 function getBookmarkWritePermissions(input: BookmarkWriteInput): string[] {

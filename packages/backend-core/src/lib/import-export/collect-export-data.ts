@@ -39,7 +39,8 @@ async function collectBookmarksAndTags(
   const { results: bookmarks } = await db
     .prepare(
       `SELECT id, folder_id, title, url, description, cover_image, favicon,
-              is_pinned, is_archived, click_count, last_clicked_at,
+              is_pinned, is_archived, is_todo, is_private, position,
+              click_count, last_clicked_at,
               created_at, updated_at, deleted_at
        FROM bookmarks WHERE ${bookmarkWhere} ORDER BY created_at DESC`
     )
@@ -94,6 +95,12 @@ async function collectBookmarksAndTags(
     tags: bookmarkTagMap.get(String(bookmark.id)) || [],
     is_pinned: Boolean(bookmark.is_pinned),
     is_archived: Boolean(bookmark.is_archived),
+    // R8 CA-3: the export is the migration/backup format — dropping these
+    // made a JSON export lossy (a private bookmark re-imported anywhere
+    // came back public; the extension's local export already kept them).
+    is_todo: Boolean(bookmark.is_todo),
+    is_private: Boolean(bookmark.is_private),
+    position: Number(bookmark.position ?? 0),
     click_count: Number(bookmark.click_count ?? 0),
     last_clicked_at: (bookmark.last_clicked_at ?? null) as string | null,
     created_at: String(bookmark.created_at),

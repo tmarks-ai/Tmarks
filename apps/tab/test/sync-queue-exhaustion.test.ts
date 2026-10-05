@@ -47,17 +47,31 @@ describe('sync queue retry exhaustion', () => {
     expect(await takePendingBatch(10)).toHaveLength(0)
   })
 
-  it('still retries an ordinary rejection that might succeed later, with backoff', async () => {
+  it('still retries an unrecognized rejection code that might succeed later, with backoff', async () => {
     const item = await enqueueBookmark('bm-1')
 
-    // RESOURCE_LOCKED (a locked tab group) is neither terminal nor config-class:
-    // it burns one retry with backoff, like any transient business rejection.
-    await applyPushResponse([item], rejection(item.client_operation_id, 'RESOURCE_LOCKED'))
+    // R8 BR-3/CA-2 made RESOURCE_LOCKED terminal (a locked group can never be
+    // re-pushed into place, and it now arrives with server_payload for the
+    // "accept remote" recovery). The conservative DEFAULT for codes in
+    // neither set — e.g. a future server addition — stays: burn one retry
+    // with backoff, like any transient business rejection.
+    await applyPushResponse([item], rejection(item.client_operation_id, 'UNRECOGNIZED_SERVER_CODE'))
 
     const stored = await db.syncQueue.get(item.id)
     expect(stored?.status).toBe('failed')
     expect(stored?.retry_count).toBe(1)
     expect(stored?.next_retry_at).not.toBeNull()
+  })
+
+  it('treats a locked-group rejection as terminal now that the sync face enforces locks (R8 BR-3/CA-2)', async () => {
+    const item = await enqueueBookmark('bm-1')
+
+    await applyPushResponse([item], rejection(item.client_operation_id, 'RESOURCE_LOCKED'))
+
+    const stored = await db.syncQueue.get(item.id)
+    expect(stored?.status).toBe('exhausted')
+    expect(stored?.next_retry_at).toBeNull()
+    expect(await takePendingBatch(10)).toHaveLength(0)
   })
 
   // R5-10 regression: the backend delivers config-class rejections INSIDE a

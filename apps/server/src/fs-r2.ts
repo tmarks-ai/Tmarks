@@ -8,8 +8,9 @@ import { join, dirname } from 'node:path'
  * app: `snapshots/<user>/<bm>/<uuid>.html`, `assets/<kind>/<sha256>`).
  * Content-type is stored in a `.meta.json` sidecar file.
  *
- * Implements the subset backend-core actually uses: put, get, delete.
- * (head and list are included for completeness but not exercised.)
+ * Implements the subset backend-core actually uses: put, get, delete, head.
+ * (R8 IN-5: list() is NOT implemented — nothing in backend-core calls it; the
+ * old comment claimed it existed.)
  */
 export class FilesystemR2 {
   private readonly rootDir: string

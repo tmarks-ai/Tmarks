@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 import type { AppEnv } from '../../lib/env'
 import { internalError, notFound, success } from '../../lib/response'
-import { emitSyncChange } from '../../lib/sync/sync-emit'
+import { emitSyncChange, emitSyncChanges } from '../../lib/sync/sync-emit'
 
 interface TabGroupStateRow {
   id: string
@@ -26,6 +26,24 @@ export async function permanentDeleteTabGroupHandler(c: Context<AppEnv>): Promis
     if (group.is_deleted !== 1) {
       return notFound('Tab group must be in trash before permanent deletion')
     }
+
+    // Collect the whole subtree first (R8 BR-1): permanent delete cascades to
+    // every descendant, so each of them needs its own sync change + revision
+    // bump — emitting only the root left descendants invisible to incremental
+    // pulls for up to 24h. Mirrors folders/delete.ts.
+    const { results: subtreeRows } = await c.env.DB.prepare(
+      `WITH RECURSIVE descendants(id) AS (
+         SELECT id FROM tab_groups WHERE id = ? AND user_id = ?
+         UNION
+         SELECT tg.id FROM tab_groups tg
+         JOIN descendants d ON tg.parent_id = d.id
+         WHERE tg.user_id = ?
+       )
+       SELECT id FROM descendants`
+    )
+      .bind(groupId, userId, userId)
+      .all<{ id: string }>()
+    const subtreeIds = (subtreeRows || []).map((row) => row.id)
 
     // Permanent delete cascades to the whole subtree: first remove the items of
     // every descendant group, then the descendant groups themselves.
@@ -56,7 +74,7 @@ export async function permanentDeleteTabGroupHandler(c: Context<AppEnv>): Promis
       ).bind(userId, groupId, userId, userId),
     ])
 
-    await emitSyncChange(c.env.DB, userId, 'tab_group', groupId, 'delete')
+    await emitSyncChanges(c.env.DB, userId, 'tab_group', subtreeIds, 'delete')
 
     return success({ message: 'Tab group permanently deleted' })
   } catch (error) {

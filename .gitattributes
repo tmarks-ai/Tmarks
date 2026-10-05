@@ -12,6 +12,10 @@
 *.css text eol=lf
 *.html text eol=lf
 *.sql text eol=lf
+# R8 CD-1: without this, Windows default clones (core.autocrlf=true) check
+# shell scripts out with CRLF and bash dies on the shebang line — the flagship
+# one-click deploy script (README 方式 00) broke on first run for Windows users.
+*.sh text eol=lf
 *.svg text eol=lf
 *.png binary
 *.webp binary

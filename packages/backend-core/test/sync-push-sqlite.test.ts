@@ -231,4 +231,37 @@ describe('sync push against real SQLite', () => {
     expect(changes[0]).toMatchObject({ entity_type: 'bookmark', entity_id: 'bm-a', operation: 'upsert' })
     harness.close()
   })
+
+  // R8 BL-4: the sync tag_names path sliced at 64 while every other plane caps
+  // at 50 — API-key pushes could mint overlong rows that later 50-prefix
+  // lookups miss, resurrecting the near-duplicate-tag bug.
+  it('clamps synced tag_names to the 50-char cap and collapses prefix-twins into one tag', async () => {
+    const harness = createSqliteD1(USER)
+
+    const first = await pushSyncOperations(harness.db, USER, DEVICE, [
+      bookmarkOp({
+        entity_id: 'bm-t1',
+        payload: { title: 'T1', url: 'https://t1.example/', tag_names: ['x'.repeat(55)] },
+      }),
+    ])
+    expect(first.accepted).toHaveLength(1)
+
+    // Two 51-char names sharing the same 50-char prefix: after clamping they
+    // are ONE tag, not two rows colliding on UNIQUE(user_id, name).
+    const second = await pushSyncOperations(harness.db, USER, DEVICE, [
+      bookmarkOp({
+        entity_id: 'bm-t2',
+        payload: { title: 'T2', url: 'https://t2.example/', tag_names: ['y'.repeat(50) + 'A', 'y'.repeat(50) + 'B'] },
+      }),
+    ])
+    expect(second.accepted).toHaveLength(1)
+
+    const names = harness.sqlite
+      .prepare('SELECT name FROM tags ORDER BY name')
+      .all() as Array<{ name: string }>
+    expect(names).toHaveLength(2)
+    expect(names[0]!.name).toHaveLength(50) // the 55-char name stored clamped
+    expect(names[1]!.name).toHaveLength(50) // the prefix-twins stored as one
+    harness.close()
+  })
 })

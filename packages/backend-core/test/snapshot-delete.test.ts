@@ -6,8 +6,11 @@ import { createSqliteD1, type SqliteD1Harness } from './helpers/sqlite-d1'
 import type { AppEnv } from '../src/lib/env'
 
 /**
- * R5-8 閸ョ偛缍?deleteSnapshotHandler 閺囨儳鍘涢崚?R2 鐎电钖勯妴浣告倵閸?D1 鐞涘备鈧柡鈧摖1 婢惰精瑙﹂弮鍓佹殌娑? * 閹稿洤鎮滃鎻掑灩鐎电钖勯惃鍕攽,鐠囪褰囧姝岀箼 404"閸愬懎顔愭稉宥呯摠閸?閵嗗倷鎱ㄦ径宥呮倵:鐞涘苯鍨归梽?outbox 閸忋儵妲﹂崥灞肩
- * 閸樼喎鐡欓幍瑙勵偧閸忓牊褰佹禍?R2 濞撳懐鎮婃径杈Е娴溿倗绮伴幒鎺斺敄闁插秷鐦?娑撳氦鐤嗛幑銏ｇ熅瀵板嫬鎮撳Ο鈥崇础)閵? */
+ * R5-8 回归:deleteSnapshotHandler 曾先删 R2 后删行——R2 删除成功、D1 失败后,
+ * 行会指向一个已删除的对象(读取时 404"内容不存在")。修复:行删 + outbox 入队
+ * 在同一原子批次中先提交,R2 尽力删 + 成功后移除 job(与轮换路径同模式)。
+ * 本文件覆盖:D1 失败时行已删且 outbox 留任务;正常路径三态全净。
+ */
 const USER = 'user-1'
 const JWT_SECRET = 'x'.repeat(32)
 
@@ -125,3 +128,4 @@ describe('snapshot delete commit order (R5-8)', () => {
     expect(h.sqlite.prepare('SELECT COUNT(*) AS n FROM storage_cleanup_jobs').get()).toEqual({ n: 0 })
   })
 })
+

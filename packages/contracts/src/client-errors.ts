@@ -18,8 +18,9 @@ export type ClientErrorCode = ApiErrorCode | LocalErrorCode
 
 /** API error carrying the server (or client-local) code plus the HTTP status. */
 export class ApiError extends Error {
-  /** Parameter properties are avoided: apps/server consumes this source via
-   * Node --experimental-strip-types (erasable syntax only), which rejects them. */
+  /** Parameter properties are avoided by convention: apps/server consumes this
+   * source via tsx (R8 RD-6), which accepts them — the erasable-syntax style
+   * standardized under the old --experimental-strip-types mode is kept. */
   readonly code: ClientErrorCode
   readonly status: number
 

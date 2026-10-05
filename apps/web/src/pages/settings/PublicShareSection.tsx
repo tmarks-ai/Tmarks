@@ -37,10 +37,14 @@ export function PublicShareSection({ t }: { t: TFunc }): React.ReactElement {
   }
 
   const publicUrl = share?.slug ? `${window.location.origin}/share/${share.slug}` : ''
-  // 服务端规则镜像(share/public-share.ts):小写字母/数字/连字符、≥8 字符。
-  // 客户端先拦,避免往返后 400;空 slug 属"轮换新链接"的语义,同样按服务端
-  // 规则校验长度后放行,但明确提示原链接立即失效。
-  const slugError = slug && !/^[a-z0-9-]{8,}$/.test(slug) ? t('share.slugInvalid') : null
+  // 服务端规则镜像(share/public-share.ts):小写字母/数字/连字符、非连字符
+  // 部分 ≥8 字符(连字符不计入长度)。客户端先拦,避免往返后 400;空 slug 属
+  // "轮换新链接"的语义,同样按服务端规则校验长度后放行,但明确提示原链接
+  // 立即失效。(R8 WE-5:旧正则把连字符也计入长度,且允许首尾/连续连字符,
+  // 与后端"^[a-z0-9]+(-[a-z0-9]+)*$ + 非连字符 ≥8"漂移。)
+  const slugError = slug && !(/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.replace(/-/g, '').length >= 8)
+    ? t('share.slugInvalid')
+    : null
   const rotatesSlug = !slug && Boolean(share?.slug)
   const hasDirtyFields = dirtyRef.current.enabled || dirtyRef.current.slug || dirtyRef.current.title || dirtyRef.current.description
   const save = () => {

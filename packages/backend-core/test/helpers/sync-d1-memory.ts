@@ -34,17 +34,18 @@ export class SyncMemoryD1Database {
   }
 
   async batch(statements: SyncMemoryD1Statement[]) {
-    return Promise.all(
-      statements.map((statement) => {
-        const sql = normalizeSql(statement.sql)
-        // Route SELECT statements to all() (returns rows) and everything
-        // else (INSERT/UPDATE/DELETE) to run() (applies side effects).
-        if (sql.startsWith('select')) {
-          return statement.all()
-        }
-        return statement.run()
-      }),
-    )
+    // R8 BT-13: sequential + first-fail-stops, mirroring real D1's atomic
+    // batches (and the sqlite-d1 harness). The old Promise.all kept applying
+    // the remaining statements after one threw, so partial-failure semantics
+    // could never be caught here.
+    const results: unknown[] = []
+    for (const statement of statements) {
+      const sql = normalizeSql(statement.sql)
+      // Route SELECT statements to all() (returns rows) and everything
+      // else (INSERT/UPDATE/DELETE) to run() (applies side effects).
+      results.push(sql.startsWith('select') ? await statement.all() : await statement.run())
+    }
+    return results
   }
 
   first(sql: string, values: unknown[]) {

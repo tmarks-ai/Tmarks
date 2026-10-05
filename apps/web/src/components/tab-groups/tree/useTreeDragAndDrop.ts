@@ -108,6 +108,17 @@ export function useTreeDragAndDrop({ tabGroups, onMoveGroup }: UseTreeDragAndDro
       return
     }
 
+    // R8 WE-4: before/after drops also need the cycle guard — dropping a
+    // folder NEXT TO its own descendant resolves to that descendant's parent,
+    // i.e. its own child, and the whole batch gets 400'd by the server.
+    // The bookmark tree checks every branch (useBookmarkFolderDragAndDrop);
+    // this tree previously guarded only 'inside'.
+    if (draggedGroup.is_folder && targetGroup.parent_id) {
+      const groupsByParent = buildGroupsByParent(tabGroups)
+      const descendants = collectDescendantGroups(draggedGroup.id, groupsByParent)
+      if (descendants.some((d) => d.id === targetGroup.id)) return
+    }
+
     const newParentId = targetGroup.parent_id ?? null
     // 兄弟序必须与渲染序(buildTree 按 position ASC)一致:tabGroups 来自
     // created_at DESC 的列表接口,用它算落点索引,拖一次就把全组写成创建序。

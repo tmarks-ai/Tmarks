@@ -161,27 +161,34 @@ export async function drainStorageCleanupJobs(
       result.deleted += 1
     } catch (error) {
       const attempts = Number(job.attempts ?? 0) + 1
-      if (attempts >= MAX_DRAIN_ATTEMPTS) {
-        // Dead-letter: record the terminal failure and stop rescheduling — the
-        // attempts < MAX filter above keeps the row out of every later drain
-        // (zero further reads/writes). The row stays for inspection/requeue.
-        await env.DB
-          .prepare(
-            `UPDATE storage_cleanup_jobs
-             SET attempts = ?, last_error = ?, updated_at = ?
-             WHERE storage_key = ?`,
-          )
-          .bind(attempts, errorMessage(error), nowIso, job.storage_key)
-          .run()
-      } else {
-        await env.DB
-          .prepare(
-            `UPDATE storage_cleanup_jobs
-             SET attempts = ?, next_retry_at = ?, last_error = ?, updated_at = ?
-             WHERE storage_key = ?`,
-          )
-          .bind(attempts, nextRetryAt(now, Number(job.attempts ?? 0)), errorMessage(error), nowIso, job.storage_key)
-          .run()
+      try {
+        if (attempts >= MAX_DRAIN_ATTEMPTS) {
+          // Dead-letter: record the terminal failure and stop rescheduling — the
+          // attempts < MAX filter above keeps the row out of every later drain
+          // (zero further reads/writes). The row stays for inspection/requeue.
+          await env.DB
+            .prepare(
+              `UPDATE storage_cleanup_jobs
+               SET attempts = ?, last_error = ?, updated_at = ?
+               WHERE storage_key = ?`,
+            )
+            .bind(attempts, errorMessage(error), nowIso, job.storage_key)
+            .run()
+        } else {
+          await env.DB
+            .prepare(
+              `UPDATE storage_cleanup_jobs
+               SET attempts = ?, next_retry_at = ?, last_error = ?, updated_at = ?
+               WHERE storage_key = ?`,
+            )
+            .bind(attempts, nextRetryAt(now, Number(job.attempts ?? 0)), errorMessage(error), nowIso, job.storage_key)
+            .run()
+        }
+      } catch (updateError) {
+        // The UPDATE itself can fail (e.g. the free plan's 50-queries/invocation
+        // budget exhausted mid-drain) — it must not abort the loop and abandon
+        // the remaining jobs' error state (R8 BL-5).
+        console.error('storage-cleanup: failed to record attempt:', updateError)
       }
       result.failed += 1
     }

@@ -106,7 +106,11 @@ describe('fetchFolderPathMap', () => {
     h.sqlite
       .prepare(`INSERT INTO bookmark_folders (id, user_id, name, parent_id) VALUES (?, ?, ?, ?)`)
       .run('f-child', USER, 'child', 'f-root')
-    // Another user's folder must not leak into the map.
+    // Another user's folder must not leak into the map (parent row first —
+    // the harness enforces the users FK since R8 IN-1).
+    h.sqlite
+      .prepare(`INSERT INTO users (id, username, password_hash) VALUES ('user-2', 'user-2', 'x')`)
+      .run()
     h.sqlite
       .prepare(`INSERT INTO bookmark_folders (id, user_id, name, parent_id) VALUES (?, ?, ?, NULL)`)
       .run('f-other', 'user-2', 'other')

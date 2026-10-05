@@ -108,8 +108,14 @@ echo "database_id: $DATABASE_ID"
 # 填入 wrangler.toml
 sed -i "s|<your-d1-database-id>|$DATABASE_ID|" wrangler.toml
 
-# 创建 R2 桶（如果已存在会报错，忽略）
-npx wrangler r2 bucket create tmarks-snapshots 2>/dev/null || true
+# 创建 R2 桶（已存在会报错，忽略；10042 = R2 未激活，见下方处理）
+if ! npx wrangler r2 bucket create tmarks-snapshots 2>/dev/null; then
+  if ! npx wrangler r2 bucket list 2>/dev/null | grep -q tmarks-snapshots; then
+    echo "R2 未在 Dashboard 激活 (code 10042) —— 注释 R2 绑定段以降级部署（快照功能暂不可用，其余功能全部正常）"
+    # R2 未激活时带绑定 deploy 必失败：注释三行后部署，激活 R2 后去掉注释重部署即可恢复快照
+    sed -i.bak '/^\[\[r2_buckets\]\]/,/^bucket_name/ s/^/# /' wrangler.toml && rm -f wrangler.toml.bak
+  fi
+fi
 
 # 设置 JWT Secret
 echo "$JWT_SECRET" | npx wrangler secret put JWT_SECRET
@@ -134,13 +140,26 @@ echo "部署地址看上方 wrangler deploy 输出中的 URL"
 # ─── 5. 用户注册完成后关闭注册 ───
 npx wrangler deploy
 
-# ─── 6. （可选）设置 GitHub Actions 持续部署 ───
-# 如果用户提供了 GitHub PAT，添加 secrets 让后续 push 自动部署
+# ─── 6.（可选）配置 GitHub Actions 持续部署 ───
+# 仅当用户提供了 GitHub PAT 时执行。CI 在用户自己的 fork 上跑——secrets 必须
+# 设到 fork:此前克隆的是上游 tmarks-ai/Tmarks,gh secret set 从 cwd 的 remote
+# 解析仓库,对上游公共仓库无权限必然 403/404,本步骤结构性不可达(R8 CD-3)。
 if [ -n "$GITHUB_TOKEN" ]; then
-  echo "$CLOUDFLARE_API_TOKEN" | gh secret set CLOUDFLARE_API_TOKEN
-  echo "$CLOUDFLARE_ACCOUNT_ID" | gh secret set CLOUDFLARE_ACCOUNT_ID
-  echo "$JWT_SECRET" | gh secret set JWT_SECRET
-  echo "✅ GitHub Actions 持续部署已配置，后续 push 到 main 自动部署"
+  if ! command -v gh >/dev/null; then
+    echo "未安装 GitHub CLI(gh)——跳过 CI/CD 配置"
+    echo "告诉用户:后续更新需要手动重新部署(重跑方式二),或安装 gh 后重跑本步骤"
+  else
+    export GH_TOKEN="$GITHUB_TOKEN"
+    # Fork 到用户账户(已存在会静默跳过),再把本地克隆的 remote 指向 fork
+    gh repo fork tmarks-ai/Tmarks --clone=false 2>/dev/null || true
+    FORK_REPO="$(gh api user --jq .login)/Tmarks"
+    git remote set-url origin "https://github.com/$FORK_REPO.git"
+    # -R 显式定向到 fork,不依赖 cwd 的 remote 解析
+    gh secret set CLOUDFLARE_API_TOKEN --repo "$FORK_REPO" <<< "$CLOUDFLARE_API_TOKEN"
+    gh secret set CLOUDFLARE_ACCOUNT_ID --repo "$FORK_REPO" <<< "$CLOUDFLARE_ACCOUNT_ID"
+    gh secret set JWT_SECRET --repo "$FORK_REPO" <<< "$JWT_SECRET"
+    echo "✅ CI/CD 已配置到 $FORK_REPO:后续 git push 到 fork 的 main 自动部署"
+  fi
 fi
 ```
 
@@ -172,7 +191,8 @@ pnpm --filter @tmarks/tab build
 
 | 问题 | 解决 |
 |---|---|
-| `R2 bucket create 失败 (code 10042)` | 需要先在 https://dash.cloudflare.com → R2 → Get Started 手动激活（一次性） |
+| `R2 bucket create 失败 (code 10042)` | 需要先在 https://dash.cloudflare.com → R2 → Get Started 手动激活（一次性）；或按上方脚本注释 `[[r2_buckets]]` 三行降级部署 |
+| `deploy 报 R2 bucket tmarks-snapshots 不存在/绑定失败` | 同上——R2 未激活时不能带 R2 绑定部署：注释 `wrangler.toml` 的 `[[r2_buckets]]` 段后重新 `wrangler deploy` |
 | `d1 create 失败 (already exists)` | 正常，跳过即可 |
 | `deploy 后 503 migrations not applied` | 运行 `npx wrangler d1 migrations apply tmarks-db --remote` |
 | `deploy 后 503 JWT_SECRET` | 运行 `echo "$JWT_SECRET" | npx wrangler secret put JWT_SECRET` |

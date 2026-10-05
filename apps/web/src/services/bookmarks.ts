@@ -45,11 +45,14 @@ export const bookmarksService = {
   async getAllBookmarks(): Promise<BookmarkDTO[]> {
     const all: BookmarkDTO[] = []
     let cursor: string | undefined
-    do {
-      const page = await bookmarksService.getBookmarks({ page_size: 100, page_cursor: cursor })
-      all.push(...page.bookmarks)
-      cursor = page.meta?.has_more ? page.meta.next_cursor ?? undefined : undefined
-    } while (cursor)
+    // R8 WE-9: 50-page safety cap, same as listAllTabGroups — a degenerate
+    // cursor would otherwise loop forever.
+    for (let page = 0; page < 50; page++) {
+      const result = await bookmarksService.getBookmarks({ page_size: 100, page_cursor: cursor })
+      all.push(...result.bookmarks)
+      if (!result.meta?.has_more || !result.meta.next_cursor) break
+      cursor = result.meta.next_cursor
+    }
     return all
   },
 

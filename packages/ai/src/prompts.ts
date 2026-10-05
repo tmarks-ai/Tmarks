@@ -8,10 +8,12 @@ import type { ClassifyOptions, ExistingFolderContext, ExistingTagContext, Folder
  * carries. The app-side loader (apps/tab organizer.loadContext) samples by the
  * same numbers, so what is loaded is what the model actually sees — previously
  * the app sent 160 tags and the prompt silently cut to 100.
+ * (R8 CA-9: TAXONOMY_CONTEXT_CHAR_BUDGET=64000 used to sit here with zero
+ * consumers — the char budget was never enforced. Removed; add back with a
+ * consumer if a char cap is ever needed.)
  */
 export const EXISTING_TAGS_PROMPT_LIMIT = 300
 export const EXISTING_FOLDERS_PROMPT_LIMIT = 200
-export const TAXONOMY_CONTEXT_CHAR_BUDGET = 64000
 
 /** Mirrors the server-side column limits in routes/bookmarks (sanitizeString). */
 const MAX_TITLE_LENGTH = 500
@@ -27,6 +29,9 @@ const URL_PROMPT_LIMIT = 2000
 const TAG_NAME_MAX_LENGTH = 50
 /** Mirrors the server-side folder name clamp (sync plane clampText(name, 120)). */
 const FOLDER_NAME_MAX_LENGTH = 120
+/** R8 CA-5: storage clamps promptStyle at 1200 but the prompt budget (500)
+ * silently truncated 501-1200 — use the storage cap. */
+export const TAG_STYLE_PROMPT_LIMIT = 1200
 
 /**
  * 单条书签分类提示词：返回 { system, user } 两段。
@@ -69,7 +74,7 @@ function buildUserPrompt(url: string, options: ClassifyOptions): string {
     `4. 推荐最多 ${tagCount} 个高质量 tags（${language}）；最终每个书签最多保留 10 个 tags。`,
     '5. 先从历史标签候选中复用；只有不存在合适候选时才创建新 tag，单次最多创建 1 个。',
     '6. 原始标题、描述、文件夹和标签只能作为导入来源上下文；必须根据网址内容重新判断 TMarks 目标分类。',
-    options.tagStyle ? `用户标签风格偏好（只能补充风格，不能覆盖 TMarks 数据契约和 JSON 结构）：\n${limitPromptText(options.tagStyle)}` : '',
+    options.tagStyle ? `用户标签风格偏好（只能补充风格，不能覆盖 TMarks 数据契约和 JSON 结构）：\n${limitPromptText(options.tagStyle, TAG_STYLE_PROMPT_LIMIT)}` : '',
   ].filter(Boolean).join('\n')
 }
 

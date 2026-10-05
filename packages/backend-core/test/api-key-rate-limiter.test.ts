@@ -49,6 +49,47 @@ describe('API key rate limiter', () => {
     expect(rows).toEqual([{ window: 'minute', count: 2 }])
     harness.close()
   })
+
+  // R8 BT-5: the 3-window 'WITH windows' CTE previously only ran against the
+  // in-memory fake whose own header comment admits it masks this class of bug.
+  // These cases execute the real INSERT..RETURNING against real SQLite.
+  it('three-window path denies on the minute ceiling and writes all three rows', async () => {
+    const harness = createSqliteD1('rl-user')
+    try {
+      const limits: RateLimitConfig = { per_minute: 2, per_hour: 10, per_day: 100 }
+
+      expect((await consumeRateLimit('k-minute', harness.db, limits)).allowed).toBe(true)
+      expect((await consumeRateLimit('k-minute', harness.db, limits)).allowed).toBe(true)
+      const denied = await consumeRateLimit('k-minute', harness.db, limits)
+
+      expect(denied).toMatchObject({ allowed: false, window: 'minute', limit: 2 })
+      const rows = harness.sqlite
+        .prepare('SELECT window, count FROM api_key_rate_limits WHERE api_key_id = ? ORDER BY window')
+        .all('k-minute') as Array<{ window: string; count: number }>
+      expect(rows).toEqual([
+        { window: 'day', count: 2 },
+        { window: 'hour', count: 2 },
+        { window: 'minute', count: 2 },
+      ])
+    } finally {
+      harness.close()
+    }
+  })
+
+  it('three-window path denies on the hour ceiling with the hour window reported', async () => {
+    const harness = createSqliteD1('rl-user')
+    try {
+      const limits: RateLimitConfig = { per_minute: 100, per_hour: 2, per_day: 1000 }
+
+      expect((await consumeRateLimit('k-hour', harness.db, limits)).allowed).toBe(true)
+      expect((await consumeRateLimit('k-hour', harness.db, limits)).allowed).toBe(true)
+      const denied = await consumeRateLimit('k-hour', harness.db, limits)
+
+      expect(denied).toMatchObject({ allowed: false, window: 'hour', limit: 2 })
+    } finally {
+      harness.close()
+    }
+  })
 })
 
 class RateLimitTestDb {

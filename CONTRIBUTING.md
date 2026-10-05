@@ -8,7 +8,7 @@ monorepo: a Cloudflare Worker backend (`packages/backend-core`,
 ## Setup
 
 ```bash
-pnpm install        # Node ≥ 20, pnpm 10
+pnpm install        # Node ≥ 22.5, pnpm 10
 # There is no root `dev` script — run a single app instead:
 pnpm --filter @tmarks/web dev      # web app (Vite)
 pnpm --filter @tmarks/tab dev      # extension (crxjs dev server)
@@ -72,28 +72,51 @@ pnpm build
 
 ## Workers platform limits (the recurring bug class)
 
-Two audits in a row (R4, R5) caught bugs that pass every test locally and only
-fail in production, because local SQLite/miniflare does not model the platform.
-Before writing a query or config that works on your machine, check it against
-this list:
+Three audits in a row (R4, R5, R8) caught bugs that pass every test locally
+and only fail in production, because local SQLite/miniflare/POSIX does not
+model the platform. Before writing a query, script or config that works on
+your machine, check it against this list:
 
 - **D1: max 100 bound parameters per query** — every `IN (?)` expansion over a
   user-sized array must go through `chunkForD1In` (`lib/d1-chunk.ts`). The
   sqlite test harness (`test/helpers/sqlite-d1.ts`) enforces this limit live,
   so a violation fails the tests — keep new INs covered by a max-size test.
-- **D1: foreign keys** — declared `ON DELETE CASCADE/SET NULL` clauses do not
-  fire the way you might expect; the delete paths cascade manually. Don't rely
-  on the schema clause doing it for you (see `sql/README.md`).
+- **D1: foreign keys are enforced by default** — equivalent to
+  `PRAGMA foreign_keys = on`, so the declared `ON DELETE CASCADE/SET NULL`
+  clauses do fire. The local adapters (`apps/server`) and the test harness
+  are aligned (R8 IN-1 — the old OFF hid violations until a real deploy).
+  Delete paths still cascade manually as defense in depth: don't rely on
+  the schema clause doing it for you (see `sql/README.md`).
 - **Workers PBKDF2: hard 100k iteration cap** — the runtime throws
   NotSupportedError above it; password hashing must always derive its work
   factor via `getPbkdf2Iterations(env)` (default 100000).
-- **Free plan: 50 D1 queries per invocation** — a 100-operation sync push
-  exceeds it by design; chunking or docs, not denial, is the answer.
+- **Free plan: 50 D1 queries per invocation** — a sync push costs ~7-9
+  queries per op, so `wrangler.toml` presets `SYNC_MAX_BATCH_SIZE=5` and the
+  server rejects wider batches with 400 QUOTA_EXCEEDED (the client halves
+  its chunk automatically). Paid plans can raise it to ~120.
 - **R2 must be enabled in the Dashboard** — no API/CLI flag turns it on
-  (code 10042); the app runs a documented degraded mode until it is.
+  (code 10042); the deploy paths degrade to no-snapshot mode automatically
+  until it is (one-click script + CI both detect and handle it, R8-M1/M2).
 - **Deploys propagate with a seconds-level window** — verify behavior changes
   (e.g. registration closed) a few seconds after `wrangler deploy`, not in the
   same breath.
+- **Git checkouts are platform-specific** — Windows defaults to
+  `core.autocrlf=true`; shell scripts without an `.gitattributes` `eol=lf` pin
+  die on their shebang line (`*.sh text eol=lf` — R8 CD-1). New script or
+  config file types need the same pin before users' first clone.
+- **CPU architectures exist beyond amd64** — the prebuilt image publishes
+  `linux/amd64,linux/arm64` (R8 CD-2). Anything that assumes `uname -m` or
+  ships a native binary must handle arm64 (RPi, most NAS, Apple Silicon).
+
+### Local stubs must be STRICTER than the platform, never looser
+
+R8 IN-1 flipped the FK pragma from OFF to ON and immediately surfaced nine
+seed bugs in tests — none in production code, but every one of them would
+have failed identically on real D1. The general rule the audit distilled:
+when a local adapter/harness models a platform constraint, model the
+platform's **strict** side. A looser local stub is a green light for a
+production-only failure (the sqlite-999-params-vs-D1-100 class of bug);
+a stricter stub can only produce a false alarm, which costs minutes.
 
 ## Reporting security issues
 

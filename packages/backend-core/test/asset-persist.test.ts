@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { assetPath, collectOrphanedAssetKeys, persistBookmarkImages, isAssetPath } from '../src/lib/bookmarks/asset-persist'
+import { persistBookmarkImages, isAssetPath, assetPath } from '../src/lib/bookmarks/asset-persist'
+import { collectOrphanedAssetKeysBeforeDelete } from '../src/lib/storage-cleanup'
 import { createSqliteD1, type SqliteD1Harness } from './helpers/sqlite-d1'
 import { r2, seedBookmark } from './helpers/asset-test-utils'
 import type { Env } from '../src/lib/env'
@@ -196,7 +197,10 @@ describe('persistBookmarkImages', () => {
     expect(row(h, 'bm-dead').favicon).toBeNull()
   })
 
-  it('collectOrphanedAssetKeys keeps hashes still referenced by other rows, drops unreferenced ones', async () => {
+  // R8 BL-9: the old collectOrphanedAssetKeys (no exclude semantics, dead
+  // production code — this was its only consumer) is deleted; the test now
+  // covers the live successor with its exclude predicate.
+  it('orphan discovery keeps hashes still referenced by surviving rows, drops unreferenced ones', async () => {
     const h = db()
     const shared = assetPath('favicon', 'c'.repeat(64))
     const unique = assetPath('cover', 'd'.repeat(64))
@@ -204,13 +208,18 @@ describe('persistBookmarkImages', () => {
       .prepare(`INSERT INTO bookmarks (id, user_id, title, url, favicon, cover_image, created_at, updated_at) VALUES (?, ?, 't', 'https://example.com/b', ?, NULL, ?, ?)`)
       .run('bm-keep', USER, shared, new Date().toISOString(), new Date().toISOString())
 
-    // The deleted row owned both; only the shared one survives via bm-keep.
-    const keys = await collectOrphanedAssetKeys(h.db, [shared, unique, 'https://not-an-asset.example/x', null])
+    // The row being deleted (bm-dead, excluded from the scan) owned both;
+    // only the shared one survives via bm-keep.
+    const keys = await collectOrphanedAssetKeysBeforeDelete(
+      h.db,
+      [shared, unique, 'https://not-an-asset.example/x', null],
+      { excludeBookmarkIds: ['bm-dead'] },
+    )
     expect(keys).toEqual([`assets/cover/${'d'.repeat(64)}`])
 
     // Once the last reference is gone, the shared hash becomes garbage too.
     h.sqlite.prepare(`DELETE FROM bookmarks WHERE id = 'bm-keep'`).run()
-    const keys2 = await collectOrphanedAssetKeys(h.db, [shared])
+    const keys2 = await collectOrphanedAssetKeysBeforeDelete(h.db, [shared], { excludeBookmarkIds: ['bm-dead'] })
     expect(keys2).toEqual([`assets/favicon/${'c'.repeat(64)}`])
   })
 })

@@ -96,8 +96,8 @@ export function BookmarksPage() {
   // 置顶 Dock 全局化:专用 pinned-only 查询按 pin_order 拉全量置顶(此前只过滤当前页,翻页即"消失"、重排只发子集却赋全局 pin_order)。
   // R5-12: useBookmarks 的后端默认页大小把 Dock 截断在 100 条——第 101+ 条置顶
   // 既不在主网格也不在 Dock 里,且重排只发已加载子集会污染未加载行的 pin_order。
-  // useAllPinnedBookmarks 走游标循环拉全量,Dock 渲染完整集、重排发送全序。
-  const pinnedQuery = useAllPinnedBookmarks(sortBy)
+  // useAllPinnedBookmarks 走游标循环拉全量,Dock 渲染完整集、重排发送全序(固定 pin_order 排序,与网格 sort 解耦——R8 WE-1)。
+  const pinnedQuery = useAllPinnedBookmarks()
 
   const filteredBookmarks = bookmarks
 
@@ -136,10 +136,10 @@ export function BookmarksPage() {
     setStatusFilter('all')
   }
   const showPinned = !isFiltering && !batchMode
-  const pinnedBookmarks = showPinned ? (pinnedQuery.data ?? []) : []
-  const mainBookmarks = showPinned
-    ? filteredBookmarks.filter((bookmark) => !bookmark.is_pinned)
-    : filteredBookmarks
+  // R8 WE-3: Dock 加载/失败期间不过滤主网格置顶行——置顶项要么在 Dock 要么在主网格,不再有拉取失败后整页消失的丢数据假象。
+  const pinnedDockReady = showPinned && !pinnedQuery.isLoading && !pinnedQuery.isError
+  const pinnedBookmarks = pinnedDockReady ? (pinnedQuery.data ?? []) : []
+  const mainBookmarks = pinnedDockReady ? filteredBookmarks.filter((bookmark) => !bookmark.is_pinned) : filteredBookmarks
   const pinnedSlot =
     pinnedBookmarks.length > 0 ? (
       <PinnedBookmarksSection bookmarks={pinnedBookmarks} onUnpin={handleTogglePin} />

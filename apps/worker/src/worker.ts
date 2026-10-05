@@ -54,7 +54,10 @@ export default {
       return
     }
     ctx.waitUntil(
-      drainStorageCleanupJobs(env, { now: new Date(controller.scheduledTime) })
+      // R8 BL-5: free plan caps D1 at 50 queries/invocation and each job costs
+      // 2-3 queries, so an explicit limit keeps the hourly drain inside the
+      // budget (~1 + 15×3 + margin < 50); the default 100 aborted mid-drain.
+      drainStorageCleanupJobs(env, { now: new Date(controller.scheduledTime), limit: 15 })
         .then((result) => {
           if (result.processed > 0) {
             console.log('Storage cleanup drain:', result)

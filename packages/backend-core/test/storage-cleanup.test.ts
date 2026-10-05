@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { checkMigrationsApplied } from '../src/lib/migration-gate'
 import { permanentDeleteBookmark } from '../src/lib/bookmarks/bookmark-trash'
 import { drainStorageCleanupJobs, storageCleanupInsert } from '../src/lib/storage-cleanup'
@@ -80,13 +80,13 @@ describe('storage cleanup outbox', () => {
          VALUES ('bm-1', ?, 'trash', 'https://example.com/a', ?, ?, ?, ?)`,
       )
       .run(USER, ASSET_PATH, now, now, now)
+    h.sqlite.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)').run('user-2', 'user-2', 'x')
     h.sqlite
       .prepare(
         `INSERT INTO bookmarks (id, user_id, title, url, favicon, created_at, updated_at)
          VALUES ('bm-2', 'user-2', 'live', 'https://example.com/b', ?, ?, ?)`,
       )
       .run(ASSET_PATH, now, now)
-    h.sqlite.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)').run('user-2', 'user-2', 'x')
 
     const result = await permanentDeleteBookmark(h.db, 'bm-1', USER)
 
@@ -148,6 +148,7 @@ describe('storage cleanup outbox', () => {
     const key = `assets/favicon/${ASSET_HASH}`
     await enqueue(h, key, 'asset')
     const now = new Date().toISOString()
+    h.sqlite.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)').run('user-2', 'user-2', 'x')
     h.sqlite
       .prepare(
         `INSERT INTO bookmarks (id, user_id, title, url, favicon, created_at, updated_at)

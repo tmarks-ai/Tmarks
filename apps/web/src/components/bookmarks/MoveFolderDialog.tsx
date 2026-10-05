@@ -43,7 +43,13 @@ export function MoveFolderDialog({
   if (!folder) return null
   const target = findFolderById(folders, folder.id)
   const excluded = new Set(target ? getFolderWithDescendantIds(target) : [folder.id])
-  const available = flattenBookmarkFoldersForMove(folders, excluded)
+  // R8 WE-2: 只列出后端会接受的目标(folders/update.ts:42-53)——目标只能是根
+  // 或一级目录(两级结构 → flatten 的 depth 0),且带子夹的目录只能移回根。
+  // 此前列出的二级目标/带子夹的任意目标必然 400,且失败零反馈。
+  const movingHasChildren = excluded.size > 1
+  const available = flattenBookmarkFoldersForMove(folders, excluded).filter((option) =>
+    movingHasChildren ? false : option.depth === 0
+  )
   const options = [{ id: '', label: t('move.rootFolder'), depth: 0 }, ...available]
   const isSameParent = selected === (folder.parent_id ?? null)
 

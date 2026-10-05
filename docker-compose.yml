@@ -8,7 +8,12 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Please set JWT_SECRET (min 32 chars)}
       # "true" only for the first registration, then set to "false" or remove
       ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}
-      ENVIRONMENT: production
+      # "production" sets the Secure flag on the refresh cookie — browsers only
+      # store it over HTTPS (http://localhost is exempt). For plain-HTTP LAN
+      # access (http://192.168.x.x:8787) either put the server behind HTTPS or
+      # override with -e ENVIRONMENT=development (R8-M5) — otherwise the web
+      # session dies after the 1h access token expires.
+      ENVIRONMENT: ${ENVIRONMENT:-production}
       TMARKS_DATA_DIR: /app/data
       TMARKS_WEB_DIST: /app/apps/web/dist
       TMARKS_PORT: 8787

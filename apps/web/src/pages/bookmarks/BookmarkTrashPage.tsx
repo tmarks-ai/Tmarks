@@ -26,12 +26,14 @@ async function getAllTrashedBookmarks(): Promise<TrashResponse> {
   let pageCursor: string | undefined
   let meta: TrashResponse['meta'] | null = null
 
-  do {
-    const page = await bookmarksService.getTrash({ page_size: 100, page_cursor: pageCursor })
-    bookmarks.push(...page.bookmarks)
-    meta = page.meta
-    pageCursor = page.meta.has_more ? page.meta.next_cursor ?? undefined : undefined
-  } while (pageCursor)
+  // R8 WE-9: 50-page safety cap, same discipline as the tab-groups walker.
+  for (let page = 0; page < 50; page++) {
+    const result = await bookmarksService.getTrash({ page_size: 100, page_cursor: pageCursor })
+    bookmarks.push(...result.bookmarks)
+    meta = result.meta
+    if (!result.meta.has_more || !result.meta.next_cursor) break
+    pageCursor = result.meta.next_cursor
+  }
 
   return {
     bookmarks,

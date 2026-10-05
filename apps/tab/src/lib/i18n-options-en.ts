@@ -16,7 +16,7 @@ export const optionsEn: Record<string, string> = {
   'options.bookmarksCount': 'Bookmarks',
   'options.lastSync': 'Last sync',
   'options.failedCount': '{{count}} sync item(s) failed',
-  'options.failedHint': 'Review and retry under the TMarks tab.',
+  'options.failedHint': 'Review and retry under Settings → Account & Sync.',
   'options.resetDone': 'Preferences reset to defaults.',
   'pref.appearanceTitle': 'Appearance',
   'pref.appearanceDesc': 'Choose theme and color scheme.',

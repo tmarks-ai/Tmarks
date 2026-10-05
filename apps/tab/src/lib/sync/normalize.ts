@@ -65,6 +65,10 @@ export function normalizeTabGroupRow(row: Record<string, unknown>): NormalizedTa
       tags: parseTags(row.tags),
       parent_id: nullableStr(row.parent_id) as EntityId | null,
       is_folder: boolInt(row.is_folder),
+      // R8 CA-2: keep the lock flag — the server payload carries it, and the
+      // extension previously dropped it here, so locked groups looked
+      // (and stayed) editable locally while the web UI promised a freeze.
+      is_locked: boolInt(row.is_locked),
       position: num(row.position),
       created_at: str(row.created_at),
       updated_at: str(row.updated_at),

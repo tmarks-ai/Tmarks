@@ -27,7 +27,13 @@ export interface SyncChange<TPayload = unknown> {
   entity_type: SyncEntityType
   entity_id: EntityId
   operation: SyncOperationType
-  revision: Revision
+  /**
+   * Null on bootstrap rows that predate revision tracking (folders, tags and
+   * tab-group items carry no revision column) — clients treat null as
+   * last-write-wins, the same semantic as server_revision in SyncConflict
+   * (R8 BL-3). Incremental changes always carry a real revision.
+   */
+  revision: Revision | null
   payload: TPayload
   changed_at: ISODateTimeString
 }
@@ -100,7 +106,9 @@ export interface SyncConflictDTO {
   server_payload: unknown
   /** Null when the server row predates revision tracking or was hard-deleted. */
   server_revision: Revision | null
-  reason: 'revision_mismatch' | 'deleted_on_server' | 'permission_denied'
+  // R8 CA-8: 'permission_denied' removed — it had zero producers and zero
+  // consumers; the only conflict reasons the server emits are the two below.
+  reason: 'revision_mismatch' | 'deleted_on_server'
 }
 
 export interface SyncPushResponse {

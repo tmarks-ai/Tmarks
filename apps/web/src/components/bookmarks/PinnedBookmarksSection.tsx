@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   DndContext,
@@ -37,6 +37,10 @@ export function PinnedBookmarksSection({
   const reorderPinned = useReorderPinned()
   const [editMode, setEditMode] = useState(false)
   const [unpinTarget, setUnpinTarget] = useState<BookmarkDTO | null>(null)
+  // R8 WE-7: reorderingRef gate (the folder panel's pattern) — two quick
+  // drags both computed `next` from the same snapshot and the later POST
+  // overwrote the earlier order with a stale sequence.
+  const reorderingRef = useRef(false)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor),
@@ -44,16 +48,20 @@ export function PinnedBookmarksSection({
   if (bookmarks.length === 0) return null
 
   const handleDragEnd = (event: DragEndEvent) => {
-    if (editMode) return
+    if (editMode || reorderingRef.current) return
     const { active, over } = event
     if (!over || active.id === over.id) return
     const fromIndex = bookmarks.findIndex((b) => b.id === active.id)
     const toIndex = bookmarks.findIndex((b) => b.id === over.id)
     if (fromIndex === -1 || toIndex === -1) return
     const next = arrayMove(bookmarks, fromIndex, toIndex)
+    reorderingRef.current = true
     reorderPinned.mutate(
       { bookmark_ids: next.map((b) => b.id) },
-      { onSuccess: () => toast.success(t('action.reorderSuccess')) },
+      {
+        onSuccess: () => toast.success(t('action.reorderSuccess')),
+        onSettled: () => { reorderingRef.current = false },
+      },
     )
   }
 

@@ -12,6 +12,7 @@ import {
   clampText,
 } from './sync-utils'
 import { normalizeBookmarkUrl } from '../bookmarks/bookmark-url'
+import { TAG_NAME_MAX_LENGTH } from '../tags/tags'
 export { applyBookmarkFolderOperation } from './sync-folders'
 export { applyTabGroupOperation } from './sync-tab-groups'
 export { applyTabGroupItemOperation, validateTabGroupItemPayload } from './sync-tab-group-items'
@@ -163,7 +164,16 @@ async function replaceBookmarkTagLinks(
   now: string
 ): Promise<Array<{ id: string; name: string; color: string | null }>> {
   const tagIds = uniqueStrings(payload.tag_ids)
-  const tagNames = uniqueStrings(payload.tag_names)
+  // R8 BL-4: clamp BEFORE dedupe. uniqueStrings slices at 64, but the
+  // repo-wide tag-name cap is 50 (REST plane + sync tag entity); 51-64 char
+  // names got minted overlong and later 50-prefix lookups missed them,
+  // resurrecting the near-duplicate-tag bug. Clamping first also collapses
+  // prefix-twins into one tag instead of violating UNIQUE(user_id, name).
+  const tagNames = uniqueStrings(
+    (payload.tag_names ?? []).map((name) =>
+      typeof name === 'string' ? name.slice(0, TAG_NAME_MAX_LENGTH) : name,
+    ),
+  )
   const shouldReplaceTags = Array.isArray(payload.tag_ids) || Array.isArray(payload.tag_names)
   if (!shouldReplaceTags) return []
 

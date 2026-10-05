@@ -3,6 +3,7 @@ import {
   normalizePermissions,
   PERMISSION_TEMPLATES,
 } from '@tmarks/contracts'
+import type { ApiErrorCode } from '@tmarks/contracts'
 import type { Env } from '../env'
 import { generateApiKey } from './generator'
 
@@ -25,7 +26,7 @@ interface ResolvePermissionsInput {
 
 interface ResolvePermissionsResult {
   permissions: string[]
-  error?: { code: string; message: string }
+  error?: { code: ApiErrorCode; message: string }
 }
 
 function resolvePermissions(input: ResolvePermissionsInput): ResolvePermissionsResult {
@@ -93,7 +94,7 @@ export interface CreateApiKeyInput {
 
 type CreateApiKeyResult =
   | { ok: true; key: string; data: Record<string, unknown> }
-  | { ok: false; error: { code: string; message: string; quota?: { used: number; limit: number } } }
+  | { ok: false; error: { code: ApiErrorCode; message: string; quota?: { used: number; limit: number } } }
 
 function parseExpiresAt(value: string): Date | null {
   let date: Date
@@ -184,7 +185,7 @@ export interface UpdateApiKeyInput {
 
 type UpdateApiKeyResult =
   | { ok: true; data: Record<string, unknown> }
-  | { ok: false; error: { code: string; message: string } }
+  | { ok: false; error: { code: ApiErrorCode; message: string } }
   | null
 
 export async function updateApiKey(

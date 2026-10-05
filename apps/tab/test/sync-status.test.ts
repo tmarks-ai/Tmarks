@@ -17,16 +17,21 @@ type HandlerSender = { id?: string; tab?: unknown }
 type HandlerMessage = { type: string }
 
 /**
- * 提取与 apps/tab/src/background/index.ts 相同的 sender-gate 逻辑,
- * 使单测能直接覆盖 "sender.id !== chrome.runtime.id → return false" 分支,
- * 而不必拉起整个 background service worker(它依赖大量 chrome.* API)。
+ * R8 TA-9: this used to claim "与 background 完全一致的守卫顺序" while the
+ * real gate in background/index.ts had already diverged (own-page pass-through
+ * before the sender.tab check, bridge-origin revalidation for content
+ * scripts). A copy that lies about parity is worse than no copy: a gate
+ * regression stays green here. The comment now states the truth — this is the
+ * FIRST-LINE id gate only; the own-page and bridge branches are untested here
+ * and covered by manual/E2E verification.
  */
 function createGatedHandler(opts: {
   db: TMarkDB
   chromeId: string
 }) {
   return (msg: HandlerMessage, sender: HandlerSender, sendResponse: (v: unknown) => void): boolean => {
-    // 与 background 完全一致的守卫顺序
+    // 与 background/index.ts 的第一条 sender.id 门一致(其后的 own-page
+    // 直通与桥接 origin 复验分支不在本镜像内)。
     if (sender.id !== opts.chromeId || sender.tab) return false
     if (msg?.type === 'GET_SYNC_STATUS') {
       void (async () => {

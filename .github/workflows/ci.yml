@@ -19,9 +19,9 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      # Third-party actions are pinned to the commit SHA of their v4 tag
-      # (git ls-remote <repo> refs/tags/v4^{}), not a moving tag: a tag can
-      # be retargeted by a compromised account. Bump by re-resolving the tag.
+      # Third-party actions are pinned to the commit SHA of the vX tag the
+      # comment names (git ls-remote <repo> refs/tags/vX^{}), not a moving tag:
+      # a tag can be retargeted by a compromised account. Bump by re-resolving.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -55,8 +55,10 @@ jobs:
   # Auto-deploy to Cloudflare Workers on push to main (after all checks pass).
   # Required GitHub Secrets (Settings → Secrets and variables → Actions):
   #   CLOUDFLARE_API_TOKEN   — Cloudflare API token with Workers deploy perms
-  #   CLOUDFLARE_ACCOUNT_ID — Cloudflare Account ID (Dashboard right sidebar)
-  #   D1_DATABASE_ID         — D1 database UUID (from `wrangler d1 create`)
+  #   CLOUDFLARE_ACCOUNT_ID  — Cloudflare Account ID (Dashboard right sidebar)
+  #   JWT_SECRET             — ≥32 chars; re-sent to the Worker every run
+  # (D1_DATABASE_ID is NOT a secret — the deploy step discovers it via
+  # `wrangler d1 list`, R8 CD-7.)
   #
   # First-time setup (one-time, run locally):
   #   1. wrangler d1 create tmarks-db       → copy the database_id to secrets
@@ -126,8 +128,20 @@ jobs:
           echo "database_id=$DATABASE_ID"
           sed -i "s|<your-d1-database-id>|$DATABASE_ID|" wrangler.toml
 
-          # ③ Create R2 bucket if it doesn't exist (ignore error if already exists)
-          npx wrangler r2 bucket create tmarks-snapshots 2>/dev/null || true
+          # ③ Create R2 bucket if it doesn't exist. R2 must be activated in the
+          #    Dashboard first (one-time, code 10042 — no API/CLI flag); when it
+          #    is not activated the [[r2_buckets]] binding would fail deploy, so
+          #    this run comments the section out and deploys in no-snapshot
+          #    degraded mode (R8-M2). Each run starts from the repo checkout, so
+          #    activating R2 later restores snapshots on the next run.
+          if ! npx wrangler r2 bucket create tmarks-snapshots 2>/dev/null; then
+            if npx wrangler r2 bucket list 2>/dev/null | grep -q tmarks-snapshots; then
+              echo "R2 bucket tmarks-snapshots already exists"
+            else
+              echo "::warning::R2 未在 Dashboard 激活(一次性,https://dash.cloudflare.com → R2)——以无快照降级模式部署;激活后重新触发本 workflow 即可恢复快照功能"
+              sed -i '/^\[\[r2_buckets\]\]/,/^bucket_name/ s/^/# /' wrangler.toml
+            fi
+          fi
 
           # ④ Set JWT secret (idempotent — overwrites if already set)
           echo "${{ secrets.JWT_SECRET }}" | npx wrangler secret put JWT_SECRET

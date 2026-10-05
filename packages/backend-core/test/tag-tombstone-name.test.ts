@@ -120,8 +120,9 @@ describe('tombstoned tag names across REST paths', () => {
     seedTag(h, 'tag-dead', 'Linux', true)
     seedTag(h, 'tag-live', 'rust', false)
 
-    // Sequential on purpose: the local sqlite harness serializes batches with
-    // BEGIN/COMMIT and cannot nest concurrent db.batch() calls.
+    // Sequential on purpose: with the shared statement gate (R8 BL-6) batches
+    // and single statements serialize — keeping these calls sequential makes
+    // the resurrection assertions independent of interleaving.
     const reused = await resolveOrCreateTagIds(h.db, USER, ['RUST'])
     const resurrected = await resolveOrCreateTagIds(h.db, USER, ['linux'])
     const fresh = await resolveOrCreateTagIds(h.db, USER, ['devops'])

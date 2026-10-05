@@ -7,7 +7,7 @@ import { takePendingBatch, markSyncing, markFailed, toEnvelope } from '../db/que
 import { applyPushResponse } from '../db/queue-apply'
 import { resetStrandedSyncingRows } from '../db/queue-repair'
 import { logOperation } from '../db/operation-logs'
-import { isForbiddenError } from './forbidden'
+import { classifyPushError, type PushBatchFailure } from './push-errors'
 
 const CHUNK_SIZE = 50
 
@@ -98,6 +98,13 @@ async function pushDirtyInner(): Promise<PushResult> {
       await markFailed(batch, 'RATE_LIMITED', res.message)
       break
     }
+    if (res.kind === 'serverError') {
+      // 服务端 5xx(如免费版 D1 预算超限):外部状态故障,不烧重试预算
+      // (SERVER_ERROR 在 NON_BURNING_ERROR_CODES 里),停止本轮排空,
+      // 下轮排空自动重试——烧预算会把确定性 500 在 ~40 分钟内打成死信。
+      await markFailed(batch, 'SERVER_ERROR', res.message)
+      break
+    }
     const applied = await applyPushResponse(batch, res.value)
     accepted += applied.accepted
     conflicts += applied.conflicts
@@ -108,11 +115,7 @@ async function pushDirtyInner(): Promise<PushResult> {
 
 type BatchResult =
   | { kind: 'ok'; value: SyncPushResponse }
-  | { kind: 'quota' }
-  | { kind: 'forbidden' }
-  | { kind: 'originUnset'; message: string }
-  | { kind: 'network'; message: string }
-  | { kind: 'rateLimited'; message: string }
+  | PushBatchFailure
 
 async function sendBatch(operations: ReturnType<typeof toEnvelope>[]): Promise<BatchResult> {
   const deviceId = operations[0]?.device_id as DeviceId
@@ -120,17 +123,7 @@ async function sendBatch(operations: ReturnType<typeof toEnvelope>[]): Promise<B
     const value = await unwrapData(await apiClient.post<SyncPushResponse>('/api/v1/sync/push', { device_id: deviceId, operations }), 'POST /api/v1/sync/push')
     return { kind: 'ok', value }
   } catch (e) {
-    const err = e as { code?: string; status?: number; message?: string }
-    if (isForbiddenError(err)) return { kind: 'forbidden' }
-    // requireOrigin 的 fail-fast 错误(INVALID_INPUT + status 0)是配置缺失,不是网络抖动——
-    // 与网络错误分开归类,避免 5 分钟排空闹钟把它当瞬态故障反复重试。
-    if (err.code === 'INVALID_INPUT' && err.status === 0) return { kind: 'originUnset', message: err.message ?? 'API origin is not configured' }
-    if (err.code === 'QUOTA_EXCEEDED') return { kind: 'quota' }
-    if (err.code === 'RATE_LIMITED' || err.code === 'RATE_LIMIT_EXCEEDED' || err.status === 429) {
-      return { kind: 'rateLimited', message: err.message ?? 'Rate limited by server' }
-    }
-    if (err.code === 'NETWORK_ERROR' || err.status === 0) return { kind: 'network', message: err.message ?? 'Network request failed' }
-    return { kind: 'network', message: err.message ?? 'Sync push failed' }
+    return classifyPushError(e as { code?: string; status?: number; message?: string })
   }
 }
 
@@ -140,7 +133,15 @@ export async function retrySyncQueueItem(id: string): Promise<void> {
   // sync_generation 校验,重置 syncing 行会被在途响应覆盖/删除。
   const item = await db.syncQueue.get(id)
   if (!item || item.status === 'syncing') return
+  // R8 TA-5: rows that carry a server_payload were already answered by the
+  // server — the server replays the stored response by (user, op id), so
+  // retrying the SAME id is an idempotent no-op loop. Rotate the id (the
+  // force-local pattern) so the retry is a genuinely fresh push. Rows with
+  // no server_payload (transport failures) keep the id: the idempotency key
+  // is what prevents a double-apply once the retry lands.
+  const alreadyAnswered = item.server_payload !== null || item.server_revision !== null
   await db.syncQueue.update(id, {
+    ...(alreadyAnswered ? { client_operation_id: `${item.device_id}:${crypto.randomUUID()}` } : {}),
     status: 'pending', retry_count: 0, next_retry_at: null, error_code: null, error_message: null,
     // 旧 server_payload 属于上次冲突的服务端版本:残留会让"接受远端"按钮
     // 出现在普通失败态上,点击即应用过期版本。

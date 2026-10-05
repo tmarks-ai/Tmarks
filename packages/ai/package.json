@@ -8,7 +8,7 @@
   "author": "TMarks Team",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tmarks-ai/tmarks-new.git"
+    "url": "https://github.com/tmarks-ai/Tmarks.git"
   },
   "exports": {
     ".": {

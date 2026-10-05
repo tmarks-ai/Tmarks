@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { bookmarksService } from '@/services/bookmarks'
-import type { BookmarkDTO, BookmarkQueryParams } from '@tmarks/contracts'
+import type { BookmarkDTO } from '@tmarks/contracts'
 
 /**
  * R5-12: the pinned dock used the plain useBookmarks without a page_size, so
@@ -11,24 +11,32 @@ import type { BookmarkDTO, BookmarkQueryParams } from '@tmarks/contracts'
  * left every unloaded pinned row with stale/colliding pin_order. This hook
  * walks ALL cursor pages so the dock always renders the complete pinned set.
  *
+ * R8 WE-1: the fetch is pinned to a non-manual sort. The backend's manual arm
+ * orders by row `position` (pin_order does not participate), so passing the
+ * grid's sort through made a manual-mode dock render by grid order — drags
+ * looked ineffective and the reorder then OVERWROTE the user's existing
+ * pin_order with the position sequence. Any non-manual sort orders the
+ * pinned arm by pin_order; pinned order is independent of the grid sort, so
+ * one fixed key also shares a single cache entry across sort modes.
+ *
  * The query key keeps the 'bookmarks' prefix so the shared
  * resetQueries-on-mutation cache discipline applies to it as well.
  */
-export function useAllPinnedBookmarks(sort: BookmarkQueryParams['sort']) {
+export function useAllPinnedBookmarks() {
   return useQuery({
-    queryKey: ['bookmarks', 'all-pinned', sort],
+    queryKey: ['bookmarks', 'all-pinned'],
     queryFn: async (): Promise<BookmarkDTO[]> => {
       const collected: BookmarkDTO[] = []
       let cursor: string | undefined = undefined
-      for (;;) {
-        const page = await bookmarksService.getBookmarks({
-          sort,
+      for (let page = 0; page < 50; page++) {
+        const result = await bookmarksService.getBookmarks({
+          sort: 'created',
           pinned: true,
           page_cursor: cursor,
         })
-        collected.push(...page.bookmarks)
-        if (!page.meta?.has_more || !page.meta.next_cursor) break
-        cursor = page.meta.next_cursor
+        collected.push(...result.bookmarks)
+        if (!result.meta?.has_more || !result.meta.next_cursor) break
+        cursor = result.meta.next_cursor
       }
       return collected
     },

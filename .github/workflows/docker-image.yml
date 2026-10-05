@@ -15,14 +15,17 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+# R8 CD-11: packages:write 下沉到真正推送镜像的 job;workflow 级只保留
+# contents:read。verify 只跑测试,被投毒依赖窃取 token 时不再能推 ghcr。
 permissions:
   contents: read
-  packages: write
 
 jobs:
   # Run all tests first — don't publish a broken image.
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -51,6 +54,12 @@ jobs:
       # Third-party actions are pinned to the commit SHA of their vX tag
       # (git ls-remote <repo> refs/tags/vX^{}), not a moving tag: a tag can
       # be retargeted by a compromised account. Bump by re-resolving the tag.
+
+      # R8 CD-2: the image only built linux/amd64 while the README promises
+      # "any VPS/home server/NAS" — ARM hosts (RPi, most NAS, Apple Silicon)
+      # got "no matching manifest". QEMU lets the builder stage's RUN steps
+      # execute under emulation for the arm64 target.
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
@@ -58,6 +67,37 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      # R8 RD-1: build success does not mean the image STARTS — e663852 already
+      # had to replace a ghcr image that could not boot (3 of its 4 blocking
+      # bugs were runtime-only). Smoke the amd64 build (load, run, health
+      # check) before anything is pushed; the multi-arch push below reuses
+      # the gha cache so it costs almost nothing extra.
+      - name: Build smoke candidate (amd64, local load)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          load: true
+          push: false
+          tags: tmarks-smoke:local
+          cache-from: type=gha
+
+      - name: Smoke test — container must serve /api/v1/health
+        run: |
+          docker run -d --name tmarks-smoke -p 8787:8787 \
+            -e JWT_SECRET="$(openssl rand -base64 32)" tmarks-smoke:local
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8787/api/v1/health; then
+              echo "smoke ok"
+              docker rm -f tmarks-smoke >/dev/null
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "smoke failed — container logs:"
+          docker logs tmarks-smoke
+          docker rm -f tmarks-smoke >/dev/null
+          exit 1
 
       - id: meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
@@ -71,6 +111,7 @@ jobs:
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

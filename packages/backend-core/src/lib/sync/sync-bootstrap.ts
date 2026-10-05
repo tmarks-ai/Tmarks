@@ -35,14 +35,26 @@ const PAGE_ORDER = [
 type PagedEntityType = (typeof PAGE_ORDER)[number]
 
 const ENTITY_QUERIES: Record<PagedEntityType, string> = {
-  bookmark_folder: `SELECT id, name, parent_id, position, is_deleted, deleted_at, created_at, updated_at
-     FROM bookmark_folders
-     WHERE user_id = ? AND id > ?
-     ORDER BY id ASC LIMIT ?`,
-  tag: `SELECT id, name, color, click_count, bookmark_count, last_clicked_at, created_at, updated_at, deleted_at
-     FROM tags
-     WHERE user_id = ? AND id > ?
-     ORDER BY id ASC LIMIT ?`,
+  // R8 BL-3: folder/tag/tab_group_item rows carry no revision column, so the
+  // snapshot used to synthesize `rev_<Date.now()>` for every row — any push
+  // carrying that base_revision guaranteed a false revision_mismatch. LEFT
+  // JOIN the entity-revision registry instead: real revision when tracked,
+  // null otherwise (the client treats null as last-write-wins, the same
+  // semantic the conflict plane already documents for server_revision).
+  bookmark_folder: `SELECT f.id, f.name, f.parent_id, f.position, f.is_deleted, f.deleted_at, f.created_at, f.updated_at,
+       ser.revision
+     FROM bookmark_folders f
+     LEFT JOIN sync_entity_revisions ser
+       ON ser.user_id = f.user_id AND ser.entity_type = 'bookmark_folder' AND ser.entity_id = f.id
+     WHERE f.user_id = ? AND f.id > ?
+     ORDER BY f.id ASC LIMIT ?`,
+  tag: `SELECT t.id, t.name, t.color, t.click_count, t.bookmark_count, t.last_clicked_at, t.created_at, t.updated_at, t.deleted_at,
+       ser.revision
+     FROM tags t
+     LEFT JOIN sync_entity_revisions ser
+       ON ser.user_id = t.user_id AND ser.entity_type = 'tag' AND ser.entity_id = t.id
+     WHERE t.user_id = ? AND t.id > ?
+     ORDER BY t.id ASC LIMIT ?`,
   bookmark: `SELECT id, title, url, description, folder_id, cover_image, favicon, is_pinned, pin_order,
             is_todo, is_archived, is_private, position,
             click_count, last_clicked_at, revision, created_at, updated_at, deleted_at
@@ -64,9 +76,12 @@ const ENTITY_QUERIES: Record<PagedEntityType, string> = {
   tab_group_item: `SELECT tgi.id, tgi.group_id, tgi.title, tgi.url, tgi.favicon, tgi.position,
             tgi.is_pinned, tgi.is_todo, tgi.is_archived, tgi.created_at,
             COALESCE(tg.updated_at, tgi.created_at) as updated_at,
-            tg.is_deleted, tg.deleted_at
+            tg.is_deleted, tg.deleted_at,
+            ser.revision
      FROM tab_group_items tgi
      CROSS JOIN tab_groups tg ON tg.id = tgi.group_id
+     LEFT JOIN sync_entity_revisions ser
+       ON ser.user_id = tg.user_id AND ser.entity_type = 'tab_group_item' AND ser.entity_id = tgi.id
      WHERE tg.user_id = ? AND tgi.id > ?
      ORDER BY tgi.id ASC LIMIT ?`,
 }

@@ -33,14 +33,18 @@ export function listMigrationFiles(): string[] {
 }
 
 /**
- * A database in the pre-migration state: in-memory, foreign keys off (D1
- * does not enable them). Kept for the upgrade-path tests that future
- * append migrations (08_*.sql …) will need — they seed data into a partial
- * migration state, then apply the rest.
+ * A database in the pre-migration state: in-memory. Kept for the upgrade-path
+ * tests that future append migrations (08_*.sql …) will need — they seed data
+ * into a partial migration state, then apply the rest. Every FK in the schema
+ * references a table created by an EARLIER migration, so partial states stay
+ * consistent under enforcement.
  */
 export function createBareDatabase(): SqliteDatabase {
   const db = new DatabaseSync(':memory:')
-  db.exec('PRAGMA foreign_keys = OFF')
+  // R8 IN-1: D1 enforces foreign keys by default (equivalent to
+  // `PRAGMA foreign_keys = on`). The old OFF made the harness MORE lenient
+  // than production — violations surfaced only after deploying to Workers.
+  db.exec('PRAGMA foreign_keys = ON')
   return db
 }
 
@@ -69,7 +73,9 @@ export function applyMigrationFiles(db: SqliteDatabase, files: string[]): void {
  * a unit test — it catches both migration breakage and query syntax errors that
  * string-matching assertions cannot (see the pin-order pagination regression).
  *
- * Foreign keys stay OFF to mirror D1, which does not enable them.
+ * Foreign keys are ON to mirror D1's default enforcement (R8 IN-1) — the
+ * schema's FKs all carry ON DELETE actions, matching the manual cascades the
+ * production code already performs.
  */
 export function createMigratedDatabase(): SqliteDatabase {
   const db = createBareDatabase()

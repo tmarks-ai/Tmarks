@@ -31,10 +31,18 @@ describe('REST mutations emit sync changes', () => {
   it('every handler that writes a synced table also emits', () => {
     const offenders: string[] = []
 
+    // R8 BT-7: the regex missed `INSERT OR IGNORE/REPLACE INTO <t>` and
+    // multi-line `UPDATE <t>\nSET` (tags/click.ts had been invisible for that
+    // exact reason). The walk covers routes/ + the self-emitting lib/bookmarks
+    // helpers; lib/tab-groups and lib/tags are covered by the caller check
+    // below (their emit contract lives in the calling routes).
     for (const file of [...walk(join(SRC, 'routes')), ...walk(join(SRC, 'lib', 'bookmarks'))]) {
       const source = readFileSync(file, 'utf8')
       const writes = SYNCED_TABLES.filter((table) =>
-        new RegExp(`(UPDATE ${table} SET|INSERT INTO ${table}\\b|DELETE FROM ${table}\\b)`).test(source)
+        new RegExp(
+          `(UPDATE\\s+${table}\\s+SET|INSERT\\s+(OR\\s+(?:IGNORE|REPLACE)\\s+)?INTO\\s+${table}\\b|DELETE\\s+FROM\\s+${table}\\b)`,
+          'i',
+        ).test(source)
       )
       if (writes.length === 0) continue
       if (!source.includes('emitSyncChange')) {
@@ -43,6 +51,42 @@ describe('REST mutations emit sync changes', () => {
     }
 
     expect(offenders, 'these handlers mutate synced data without recording a sync change').toEqual([])
+  })
+
+  it('every route calling the tab-group/tag lib write helpers emits (R8 BT-7 caller-side closure)', () => {
+    const offenders: string[] = []
+    // lib/tab-groups + lib/tags write synced tables from helpers; the emit
+    // contract lives in the calling routes, so the check is caller-side:
+    // a route importing a writing helper must reference emitSyncChange.
+    const helperDirs = [join(SRC, 'lib', 'tab-groups'), join(SRC, 'lib', 'tags')]
+    const writingHelpers = new Map<string, string[]>()
+    for (const file of helperDirs.flatMap((dir) => walk(dir))) {
+      const source = readFileSync(file, 'utf8')
+      const writes = SYNCED_TABLES.filter((table) =>
+        new RegExp(
+          `(UPDATE\\s+${table}\\s+SET|INSERT\\s+(OR\\s+(?:IGNORE|REPLACE)\\s+)?INTO\\s+${table}\\b|DELETE\\s+FROM\\s+${table}\\b)`,
+          'i',
+        ).test(source)
+      )
+      if (writes.length === 0) continue
+      const exports = [...source.matchAll(/export\s+(?:async\s+)?function\s+(\w+)/g)].map((m) => m[1]!)
+      if (exports.length > 0) writingHelpers.set(file.slice(SRC.length + 1), exports)
+    }
+    expect(writingHelpers.size).toBeGreaterThan(0) // the scan saw the helpers
+
+    const routeFiles = walk(join(SRC, 'routes'))
+    for (const [helperPath, exports] of writingHelpers) {
+      for (const route of routeFiles) {
+        const source = readFileSync(route, 'utf8')
+        const used = exports.filter((name) => new RegExp(`\\b${name}\\s*\\(`).test(source))
+        if (used.length === 0) continue
+        if (!source.includes('emitSyncChange')) {
+          offenders.push(`${route.slice(SRC.length + 1)} calls ${helperPath} (${used.join(', ')})`)
+        }
+      }
+    }
+
+    expect(offenders, 'these routes use writing helpers without emitting').toEqual([])
   })
 })
 

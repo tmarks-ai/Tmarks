@@ -47,7 +47,7 @@ export const en: Record<string, string> = {
   'notify.collectTitle': 'TMark Collection',
   'notify.collectOk': 'Collected {{count}} tabs',
   'notify.syncDoneTitle': 'TMark sync complete',
-  'notify.syncConflictMsg': 'Synced, {{count}} conflicts resolved (server wins)',
+  'notify.syncConflictMsg': 'Synced, {{count}} conflicts need review — open Settings → Account & Sync,',
   // account section
   'account.title': 'Account',
   'account.apiKeyDescription': 'Use the API key created in the web settings to connect this extension.',

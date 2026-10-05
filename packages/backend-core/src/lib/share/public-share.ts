@@ -26,8 +26,9 @@ export class PublicShareSettingsError extends Error {
   readonly code: 'VALIDATION_FAILED' | 'CONFLICT'
   readonly status: 400 | 409
 
-  /** Parameter properties are avoided: the Node.js server runs this source via
-   * --experimental-strip-types (erasable syntax only), which rejects them. */
+  /** Parameter properties are avoided by convention: the Node.js server runs
+   * this source via tsx (R8 RD-6), which accepts them — the erasable-syntax
+   * style standardized under the old --experimental-strip-types mode is kept. */
   constructor(code: 'VALIDATION_FAILED' | 'CONFLICT', message: string, status: 400 | 409 = 400) {
     super(message)
     this.code = code

@@ -3,7 +3,7 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
 import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { app, drainStorageCleanupJobs } from '@tmarks/backend-core'
+import { app, drainStorageCleanupJobs, getEnvironmentIssue } from '@tmarks/backend-core'
 import { createPersistentD1 } from './sqlite-d1'
 import { FilesystemR2 } from './fs-r2'
 
@@ -19,7 +19,8 @@ import { FilesystemR2 } from './fs-r2'
  *
  * Configuration (all via environment variables):
  *   TMARKS_PORT          HTTP port (default: 8787)
- *   TMARKS_DATA_DIR      persistent data dir (default: ./data)
+ *   TMARKS_DATA_DIR      persistent data dir (default: <repo>/apps/data — the
+ *                         Docker image sets /app/data where the volume mounts)
  *   TMARKS_WEB_DIST      web app build output (default: ../web/dist)
  *   JWT_SECRET           ≥32 chars, REQUIRED (fail-closed without it)
  *   ALLOW_REGISTRATION   "true" to enable registration (default: disabled)
@@ -35,13 +36,16 @@ const MIGRATIONS_DIR = resolve(join(__dirname, '../../../sql'))
 
 // --- Validate required config (fail-closed, same as the Workers gate) ---
 const JWT_SECRET = process.env.JWT_SECRET
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-  console.error('FATAL: JWT_SECRET is missing or shorter than 32 characters.')
-  console.error('Set it via: JWT_SECRET=$(openssl rand -base64 32)')
+const ENVIRONMENT = process.env.ENVIRONMENT === 'development' ? 'development' : 'production'
+// R8 BL-11: reuse the shared gate (placeholder-secret rejection + strict
+// ENVIRONMENT enum) instead of a length-only check — the length-only version
+// happily booted with the PUBLISHED example secret (35 chars ≥ 32) that the
+// Workers path 503s on.
+const environmentIssue = getEnvironmentIssue({ JWT_SECRET: JWT_SECRET ?? '', ENVIRONMENT })
+if (environmentIssue) {
+  console.error(`FATAL: ${environmentIssue}`)
   process.exit(1)
 }
-
-const ENVIRONMENT = process.env.ENVIRONMENT === 'development' ? 'development' : 'production'
 
 // --- Initialize storage adapters ---
 const DB = createPersistentD1(join(DATA_DIR, 'tmarks.db'), MIGRATIONS_DIR)
@@ -94,7 +98,9 @@ server.get('*', serveStatic({ path: join(WEB_DIST, 'index.html') }))
 // --- Storage cleanup cron (hourly, mirrors the Workers cron trigger) ---
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000
 setInterval(() => {
-  void drainStorageCleanupJobs(bindings as never, { now: new Date() })
+  // R8 BL-5: explicit drain limit — Node has no per-invocation query cap, but
+  // keep parity with the Worker's free-plan budget so behavior matches.
+  void drainStorageCleanupJobs(bindings as never, { now: new Date(), limit: 15 })
     .then((result) => {
       if (result.processed > 0) console.log('[cron] storage cleanup:', result)
     })

@@ -2,9 +2,10 @@
 # 本地开发专用变体 — 绝对不要用这个文件部署!
 # (DO NOT `wrangler deploy --config wrangler.dev.toml`)
 #
-# 用途:未登录 wrangler(无 API token)也能本地起 dev 服务。去掉了远程
-# ratelimit binding,后端自动走 D1 限流兜底;其余块须与 wrangler.toml
-# 保持同步(单边漂移即不一致)。使用:cd apps/worker &&
+# 用途:未登录 wrangler(无 API token)也能本地起 dev 服务。与主 toml 的差异
+# 只有两处:①无 [[ratelimits]](后端自动走 D1 限流兜底);②无 [triggers]
+# cron(本地 dev 不跑排空,cron 由 wrangler dev 的 --test-scheduled 手动触发)。
+# 其余块须与 wrangler.toml 保持同步(单边漂移即不一致)。使用:cd apps/worker &&
 #   pnpm exec wrangler dev --config wrangler.dev.toml
 # 部署一律走 wrangler.toml(见 DEPLOY.md §7 本地开发)。
 # =============================================================================
@@ -54,6 +55,9 @@ ENVIRONMENT = "development"
 # ALLOW_REGISTRATION = "false"
 JWT_ACCESS_TOKEN_EXPIRES_IN = "1h"
 JWT_REFRESH_TOKEN_EXPIRES_IN = "30d"
+# 与主 wrangler.toml 保持同步:免费版 50 查询/调用预算下的推送批量上限
+# (本地 dev 无预算压力,仅为维持"其余块须与主配置同步"的不变量)。
+SYNC_MAX_BATCH_SIZE = "5"
 # Password hashing work factor. The production default is 100000 — the Workers
 # runtime hard-caps PBKDF2 at 100000 iterations, so anything higher throws
 # NotSupportedError at login. Values outside [100000, 2000000] fall back to the

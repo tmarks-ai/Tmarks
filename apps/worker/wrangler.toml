@@ -96,6 +96,13 @@ ENVIRONMENT = "production"
 # ALLOW_REGISTRATION = "false"
 JWT_ACCESS_TOKEN_EXPIRES_IN = "1h"
 JWT_REFRESH_TOKEN_EXPIRES_IN = "30d"
+# 免费版同步预算(R8 BL-1/TA-1):每个 push op 实耗 ~7-9 个 D1 查询(幂等占位
+# + 实体读回 + 归属/查重 + 写入 + sync_change),而 Workers 免费版每调用上限
+# 50 个查询——默认 100 op 的推送在第一批 chunk 就超预算,500 被扩展端按网络
+# 错误烧光重试预算打成死信。服务端对超宽批次返回 400 QUOTA_EXCEEDED,客户端
+# 会自动减半 chunk 直到装下;5 op(~40 查询)保证每次调用都在预算内。
+# Workers Paid(1000 查询/调用)可调到 ~120。
+SYNC_MAX_BATCH_SIZE = "5"
 # Password hashing work factor. Defaults to 100000 — the Workers runtime
 # hard-caps PBKDF2 at 100k iterations and throws NotSupportedError above it,
 # so DO NOT raise this on Workers. Values outside [100000, 2000000] fall back

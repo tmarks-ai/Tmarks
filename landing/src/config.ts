@@ -12,7 +12,7 @@ export interface LandingConfig {
 }
 
 export const CONFIG: LandingConfig = {
-  // TODO: replace with your TMarks GitHub repository URL before publishing.
+  // Fork 部署时替换为你的仓库地址;上游默认值已指向官方仓库。 before publishing.
   // Empty = the GitHub CTAs hide themselves instead of rendering a 404 link;
   // fill it in and they come back everywhere at once.
   githubUrl: 'https://github.com/tmarks-ai/Tmarks',

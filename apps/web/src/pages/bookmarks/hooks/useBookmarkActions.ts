@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import type { BookmarkDTO, ReorderBookmarkItem } from '@tmarks/contracts'
 import { useReorderBookmarks, useUpdateBookmark } from '@/hooks/useBookmarks'
 import { useUpdateBookmarkFolder } from '@/hooks/useBookmarkFolders'
+import { describeMutationError } from '@/lib/describe-error'
+import { logger } from '@/lib/logger'
 import { useToastStore } from '@/stores/toastStore'
 
 /**
@@ -14,6 +16,7 @@ import { useToastStore } from '@/stores/toastStore'
  */
 export function useBookmarkActions(onMoveComplete: () => void) {
   const { t } = useTranslation('bookmarks')
+  const { t: tc } = useTranslation('common')
   const toast = useToastStore.getState()
   const updateBookmark = useUpdateBookmark()
   const updateFolder = useUpdateBookmarkFolder()
@@ -48,8 +51,19 @@ export function useBookmarkActions(onMoveComplete: () => void) {
   }, [updateBookmark, toast, t, onMoveComplete])
 
   const moveFolder = useCallback((folderId: string, targetParentId: string | null) => {
-    updateFolder.mutate({ id: folderId, data: { parent_id: targetParentId } }, { onSuccess: onMoveComplete })
-  }, [updateFolder, onMoveComplete])
+    // R8 WE-2: 此前只有 onSuccess——被后端拒绝(环/层级规则)时对话框不关、
+    // 无任何提示,与同面板 DnD 路径(有 describeMutationError toast)不一致。
+    updateFolder.mutate(
+      { id: folderId, data: { parent_id: targetParentId } },
+      {
+        onSuccess: onMoveComplete,
+        onError: (error) => {
+          logger.error('Failed to move folder:', error)
+          toast.error(describeMutationError(error, (key) => tc(key)))
+        },
+      },
+    )
+  }, [updateFolder, onMoveComplete, toast, tc])
 
   const reorder = useCallback((updates: ReorderBookmarkItem[]) => {
     reorderBookmarks.mutate({ updates }, { onSuccess: () => toast.success(t('action.reorderSuccess')) })

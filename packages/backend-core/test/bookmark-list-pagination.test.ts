@@ -16,6 +16,9 @@ interface SeedSpec {
 }
 
 function seed(db: SqliteDatabase, rows: SeedSpec[]): void {
+  // FK enforcement (R8 IN-1): the migrated harness enforces references now —
+  // bookmarks reference the user row, so the parent must exist first.
+  db.prepare(`INSERT OR IGNORE INTO users (id, username, password_hash) VALUES (?, ?, 'x')`).run(USER, USER)
   const insert = db.prepare(
     `INSERT INTO bookmarks (id, user_id, title, url, normalized_url, is_pinned, pin_order, is_todo, is_archived, position, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`

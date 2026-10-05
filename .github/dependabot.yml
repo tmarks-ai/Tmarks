@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # GitHub Actions: track the 3 SHA-pinned third-party actions
+  # GitHub Actions: track every SHA-pinned action across both workflows
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

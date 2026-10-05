@@ -1,6 +1,7 @@
 import type { BookmarkRow, SQLParam } from '../types'
 import type { BookmarkStatusFilter } from '@tmarks/contracts'
 import { escapeLike } from '../utils'
+import { D1_MAX_BIND_PARAMS } from '../d1-chunk'
 import {
   looksLikeJsonCursor,
   normalizeBookmarkSort,
@@ -44,7 +45,10 @@ export class BookmarkFilterLimitError extends Error {}
 // The related-tags arm binds each selected tag twice (IN + NOT IN) plus user,
 // folder and count params: 2*40 + 3 = 83 ≤ 100.
 const MAX_TAG_FILTER_IDS = 40
-// The folder arm binds the ids once plus the rest of the arm's params.
+// Absolute ceiling for the folder IN(...) expansion when the caller passes no
+// tighter budget; bookmark-list.ts passes one computed from the arm's other
+// params (R8 BL-2: folder+tags+keyword+cursor must SUM ≤ 100 or real D1 500s
+// while local SQLite — cap 999 — stays green).
 const MAX_FOLDER_FILTER_IDS = 99
 
 /** Split and cap the `tags` filter param; throws BookmarkFilterLimitError when over. */
@@ -59,7 +63,8 @@ export function parseTagFilterParam(raw: string | null): string[] {
 export function getFolderFilterClause(
   folderId: string | null,
   params: SQLParam[],
-  column = 'b.folder_id'
+  column = 'b.folder_id',
+  maxFolderIds: number = MAX_FOLDER_FILTER_IDS
 ): string {
   if (folderId === 'none') {
     return `AND ${column} IS NULL`
@@ -67,8 +72,10 @@ export function getFolderFilterClause(
 
   const folderIds = folderId?.split(',').map((id) => id.trim()).filter(Boolean) ?? []
   if (folderIds.length === 0) return ''
-  if (folderIds.length > MAX_FOLDER_FILTER_IDS) {
-    throw new BookmarkFilterLimitError(`Too many folders in filter (max ${MAX_FOLDER_FILTER_IDS})`)
+  if (folderIds.length > maxFolderIds) {
+    throw new BookmarkFilterLimitError(
+      `Too many folders in filter (max ${maxFolderIds} with the current keyword/tags/cursor combination)`,
+    )
   }
 
   params.push(...folderIds)
@@ -140,6 +147,27 @@ export function buildBookmarkListQueries(userId: string, url: URL): BookmarkList
 
   const arms: BookmarkListArm[] = []
 
+  // R8 BL-2: D1 每查询 100 绑定参数,folder IN(...) 不可分片——按"即将运行的
+  // 臂"算最坏固定开销,folder 数装进剩余预算,超限抛错由路由映射 400。
+  const tagIds = parseTagFilterParam(tags)
+  const tagParamCount = tagIds.length > 0 ? tagIds.length + 2 : 0
+  const keywordParamCount = keyword ? 3 : 0
+  const pinnedArmCursorParams = parsedCursor ? (parsedCursor.isPinned ? 5 : 0) : (legacyRawCursor ? 1 : 0)
+  const unpinnedArmCursorParams = parsedCursor ? (parsedCursor.isPinned ? 0 : 3) : (legacyRawCursor ? 1 : 0)
+  const manualArmCursorParams = parsedCursor ? 3 : (legacyRawCursor ? 1 : 0)
+  let fixedOverhead = 0
+  if (isManual) {
+    fixedOverhead = 1 + (pinned !== undefined ? 1 : 0) + keywordParamCount + tagParamCount + manualArmCursorParams + 1
+  } else {
+    if (runPinnedArm) {
+      fixedOverhead = Math.max(fixedOverhead, 2 + keywordParamCount + tagParamCount + pinnedArmCursorParams + 1)
+    }
+    if (runUnpinnedArm) {
+      fixedOverhead = Math.max(fixedOverhead, 2 + keywordParamCount + tagParamCount + unpinnedArmCursorParams + 1)
+    }
+  }
+  const folderFilterCap = D1_MAX_BIND_PARAMS - fixedOverhead
+
   // keyword/folder/tag 子句为两臂与 manual 臂共用。
   const appendFilters = (query: string, params: SQLParam[]): string => {
     let q = query
@@ -148,21 +176,18 @@ export function buildBookmarkListQueries(userId: string, url: URL): BookmarkList
       const searchPattern = `%${escapeLike(keyword)}%`
       params.push(searchPattern, searchPattern, searchPattern)
     }
-    const folderClause = getFolderFilterClause(folderId, params)
+    const folderClause = getFolderFilterClause(folderId, params, 'b.folder_id', folderFilterCap)
     if (folderClause) q += ` ${folderClause}`
-    if (tags) {
-      const tagIds = parseTagFilterParam(tags)
-      if (tagIds.length > 0) {
-        const tagPlaceholders = tagIds.map(() => '?').join(',')
-        q += ` AND b.id IN (
+    if (tagIds.length > 0) {
+      const tagPlaceholders = tagIds.map(() => '?').join(',')
+      q += ` AND b.id IN (
         SELECT bt.bookmark_id
         FROM bookmark_tags bt
         WHERE bt.user_id = ? AND bt.tag_id IN (${tagPlaceholders})
         GROUP BY bt.bookmark_id
         HAVING COUNT(DISTINCT bt.tag_id) = ?
       )`
-        params.push(userId, ...tagIds, tagIds.length)
-      }
+      params.push(userId, ...tagIds, tagIds.length)
     }
     return q
   }

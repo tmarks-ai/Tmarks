@@ -53,7 +53,10 @@ export function ConfirmRoot() {
   }
 
   // ESC 取消 + 焦点圈 + 关闭时焦回触发者(蒙层点击关闭为既有行为)。
-  useDialogA11y(true, cardRef, () => handle(false))
+  // R8 TA-4: pass state.open as `active` — the constant `true` ran the effect
+  // before the early return below, so it registered against node=null and
+  // never re-ran when the dialog actually mounted: no ESC, no focus trap.
+  useDialogA11y(state.open, cardRef, () => handle(false))
 
   if (!state.open) return null
 

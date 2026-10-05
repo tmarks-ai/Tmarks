@@ -17,7 +17,7 @@ export const optionsZh: Record<string, string> = {
   'options.bookmarksCount': '书签',
   'options.lastSync': '最近同步',
   'options.failedCount': '同步失败 {{count}} 项',
-  'options.failedHint': '在 TMarks 标签查看并重试。',
+  'options.failedHint': '在设置的「账户与同步」分区查看并重试。',
   'options.resetDone': '偏好已重置为默认。',
   'pref.appearanceTitle': '外观',
   'pref.appearanceDesc': '选择主题与深浅色。',

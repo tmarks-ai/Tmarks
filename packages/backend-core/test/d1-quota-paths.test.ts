@@ -1,10 +1,12 @@
 import { Hono } from 'hono'
 import { afterEach, describe, expect, it } from 'vitest'
 import { handleBatchCreate } from '../src/lib/bookmarks/bookmark-batch'
+import { createBookmarkHandler } from '../src/routes/bookmarks/create'
 import { emitSyncChanges } from '../src/lib/sync/sync-emit'
 import { fetchBookmarkFolderStats } from '../src/lib/bookmarks/folders'
 import { createSqliteD1, type SqliteD1Harness } from './helpers/sqlite-d1'
 import { permanentDeleteBookmark, emptyTrash } from '../src/lib/bookmarks/bookmark-trash'
+import type { AppEnv } from '../src/lib/env'
 
 const USER = 'user-1'
 
@@ -41,6 +43,23 @@ describe('batch import quota path', () => {
 })
 
 describe('dup-check point seeks', () => {
+  // R8 BT-8: these cases used to re-run the create path's own SELECT inline
+  // (self-verifying — a change to the production query left the test green)
+  // and never actually invoked the create handler. Now they do.
+  function mountCreate(h: SqliteD1Harness) {
+    const app = new Hono<AppEnv>()
+    app.post('/bookmarks', async (c, next) => {
+      c.set('auth', { user_id: USER, auth_type: 'jwt' })
+      await next()
+    }, createBookmarkHandler as never)
+    return (body: unknown) =>
+      app.request('/bookmarks', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }, { DB: h.db } as AppEnv['Bindings'])
+  }
+
   it('still restores a soft-deleted bookmark when re-saved with the exact URL', async () => {
     const h = db()
     const now = new Date().toISOString()
@@ -49,27 +68,42 @@ describe('dup-check point seeks', () => {
                 VALUES ('bm-1', ?, 'old', 'https://example.com/a', 'example.com/a', ?, ?, ?)`)
       .run(USER, now, now, now)
 
-    const found = h.sqlite
-      .prepare('SELECT id, deleted_at FROM bookmarks WHERE user_id = ? AND url = ?')
-      .get(USER, 'https://example.com/a') as { id: string; deleted_at: string } | undefined
+    const call = mountCreate(h)
+    const res = await call({ title: 'revived', url: 'https://example.com/a' })
+    const body = await res.json() as { data?: { bookmark?: { id?: string } }; error?: { code?: string } }
 
-    expect(found?.id).toBe('bm-1')
-    expect(found?.deleted_at).not.toBeNull()
+    // 生产恢复路径:同 URL 命中软删行 → 复活为同一 id(不是新建、不是 409)。
+    expect(res.status).toBe(201)
+    expect(body.data?.bookmark?.id).toBe('bm-1')
+    const revived = h.sqlite
+      .prepare('SELECT id, deleted_at, title FROM bookmarks WHERE id = ?')
+      .get('bm-1') as { id: string; deleted_at: string | null; title: string }
+    expect(revived.deleted_at).toBeNull()
+    expect(revived.title).toBe('revived')
+    expect((h.sqlite.prepare('SELECT COUNT(*) AS n FROM bookmarks').get() as { n: number }).n).toBe(1)
   })
 
   it('still detects a live duplicate by normalized URL variant', async () => {
     const h = db()
     const now = new Date().toISOString()
+    // 注意 normalized_url 的生产口径:normalizeBookmarkUrl 保留协议
+    // ('https://example.com/a'),旧用例内联 SELECT 用的是自造的 'example.com/a'
+    // 约定——自证自明的根源(BT-8)。
     h.sqlite
       .prepare(`INSERT INTO bookmarks (id, user_id, title, url, normalized_url, created_at, updated_at)
-                VALUES ('bm-1', ?, 'live', 'https://example.com/a/', 'example.com/a', ?, ?)`)
+                VALUES ('bm-1', ?, 'live', 'https://example.com/a/', 'https://example.com/a', ?, ?)`)
       .run(USER, now, now)
 
-    const byNormalized = h.sqlite
-      .prepare('SELECT id FROM bookmarks WHERE user_id = ? AND normalized_url = ? AND deleted_at IS NULL')
-      .get(USER, 'example.com/a') as { id: string } | undefined
+    const call = mountCreate(h)
+    const res = await call({ title: 'dup', url: 'https://example.com/a' })
+    const body = await res.json() as { data?: { bookmark?: { id?: string; title?: string } } }
 
-    expect(byNormalized?.id).toBe('bm-1')
+    // REST create 面对活重复的语义是幂等返回既有行(200 + 原 id),
+    // 409 DUPLICATE_URL 只存在于同步推送面。
+    expect(res.status).toBe(200)
+    expect(body.data?.bookmark?.id).toBe('bm-1')
+    expect(body.data?.bookmark?.title).toBe('live')
+    expect((h.sqlite.prepare('SELECT COUNT(*) AS n FROM bookmarks').get() as { n: number }).n).toBe(1)
   })
 })
 
@@ -80,6 +114,11 @@ describe('folder stats single scan', () => {
     const insert = h.sqlite.prepare(
       `INSERT INTO bookmarks (id, user_id, title, url, folder_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
+    // Parent row first — the harness enforces bookmarks.folder_id REFERENCES
+    // bookmark_folders since R8 IN-1.
+    h.sqlite
+      .prepare(`INSERT INTO bookmark_folders (id, user_id, name) VALUES ('f-1', ?, 'stats')`)
+      .run(USER)
     insert.run('bm-1', USER, 'a', 'https://example.com/a', null, now, now)
     insert.run('bm-2', USER, 'b', 'https://example.com/b', 'f-1', now, now)
     insert.run('bm-3', USER, 'c', 'https://example.com/c', 'f-1', now, now)

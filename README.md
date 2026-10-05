@@ -25,6 +25,8 @@ bash scripts/one-click-deploy.sh
 
 全程：**粘贴 3 条命令 → 浏览器点 Allow → 注册 → 按 Enter**。不需要复制任何令牌。
 
+> **R2 说明**：Cloudflare 的 R2 需要在 Dashboard 手动激活（一次性，可能要求支付信息），脚本/CLI 无法代办。未激活时脚本会自动以"无快照"降级模式完成部署（书签、标签、同步全部正常），之后到 [dash.cloudflare.com](https://dash.cloudflare.com) → R2 激活后重跑一遍脚本即可恢复快照功能。
+
 ### 方式 01：Docker 预构建镜像（一条命令）
 
 ```bash
@@ -35,6 +37,8 @@ docker run -d -p 8787:8787 \
 ```
 
 打开 `http://localhost:8787` 即可使用。不需要 clone、不需要 build、不需要 pnpm。
+
+> **局域网 / NAS 访问提示**：刷新令牌 cookie 带 `Secure` 标志（`ENVIRONMENT=production` 默认），浏览器只在 HTTPS 下存储它（`http://localhost` 是例外）。要通过 `http://<局域网IP>:8787` 访问，请置于 HTTPS 反向代理之后，或临时 `-e ENVIRONMENT=development`（仅限可信内网）——否则登录 1 小时后会话过期且无法自动刷新。
 
 **首次注册：**
 
@@ -78,6 +82,8 @@ docker compose up -d
 # 注册账户后，删除 ALLOW_REGISTRATION 行并重启
 ```
 
+> 局域网 / NAS 明文 HTTP 访问同样受 Secure cookie 约束——用 HTTPS 反向代理或 `ENVIRONMENT=development`，见方式 01 的提示。
+
 ### 方案 B：Cloudflare Workers（免费档，全自动部署）
 
 > 全程在浏览器里操作，**不需要打开终端**。D1 数据库、R2 桶、JWT 密钥全部由 GitHub Actions 自动创建。
@@ -112,6 +118,8 @@ git push origin main
 ```
 
 或者：在 GitHub 网页上编辑任意文件（如 README）→ Commit changes → 自动触发部署。
+
+> **前置**：CI 的自动部署要求 R2 已在 Dashboard 激活（一次性，[dash.cloudflare.com](https://dash.cloudflare.com) → R2 → Get Started）；未激活时 `wrangler deploy` 会因桶不存在而失败。
 
 #### 首次注册
 
@@ -208,4 +216,4 @@ Self-hosted on Cloudflare Workers (free tier) or Docker.
 - **499+ tests**, zero known vulnerabilities, five audit rounds passed
 
 Quick deploy: see the Chinese guide above (Docker: `docker compose up -d`;
-Cloudflare: 5-step setup with GitHub Actions CI/CD).
+Cloudflare: 3 steps — token, secrets, push — with GitHub Actions CI/CD).

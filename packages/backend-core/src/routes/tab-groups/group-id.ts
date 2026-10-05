@@ -3,7 +3,7 @@ import type { AppEnv } from '../../lib/env'
 import { badRequest, forbidden, internalError, noContent, notFound, success } from '../../lib/response'
 import { normalizeTabGroup } from '../../lib/tab-groups'
 import { sanitizeColor, sanitizeString } from '../../lib/validation'
-import { emitSyncChange } from '../../lib/sync/sync-emit'
+import { emitSyncChange, emitSyncChanges } from '../../lib/sync/sync-emit'
 
 interface TabGroupRow {
   id: string
@@ -234,6 +234,25 @@ export async function deleteTabGroupHandler(c: Context<AppEnv>): Promise<Respons
     if (groupRow.is_locked) return forbidden('Tab group is locked', 'RESOURCE_LOCKED')
 
     const now = new Date().toISOString()
+    // Collect the whole subtree first (R8 BR-1): every descendant needs its own
+    // sync change + revision bump. Emitting only the root left descendants
+    // invisible to incremental pulls for up to 24h — the extension kept them
+    // editable and a late push could resurrect a deleted group (its revision
+    // never moved). Mirrors folders/delete.ts.
+    const { results: subtreeRows } = await c.env.DB.prepare(
+      `WITH RECURSIVE descendants(id) AS (
+         SELECT id FROM tab_groups WHERE id = ? AND user_id = ?
+         UNION
+         SELECT tg.id FROM tab_groups tg
+         JOIN descendants d ON tg.parent_id = d.id
+         WHERE tg.user_id = ?
+       )
+       SELECT id FROM descendants`
+    )
+      .bind(groupId, userId, userId)
+      .all<{ id: string }>()
+    const subtreeIds = (subtreeRows || []).map((row) => row.id)
+
     // Soft-delete the group together with every descendant (recursive CTE over
     // parent_id), mirroring the folder cascade so trashing a folder group takes
     // its whole subtree with it.
@@ -253,7 +272,7 @@ export async function deleteTabGroupHandler(c: Context<AppEnv>): Promise<Respons
       .bind(groupId, userId, userId, now, now, userId)
       .run()
 
-    await emitSyncChange(c.env.DB, userId, 'tab_group', groupId, 'delete')
+    await emitSyncChanges(c.env.DB, userId, 'tab_group', subtreeIds, 'delete')
 
     return noContent()
   } catch (error) {

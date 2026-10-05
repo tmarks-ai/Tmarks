@@ -1,6 +1,6 @@
 import type { Context } from 'hono'
 import type { AppEnv } from '../../lib/env'
-import { badRequest, internalError, success } from '../../lib/response'
+import { badRequest, forbidden, internalError, success } from '../../lib/response'
 import { chunkForD1In } from '../../lib/d1-chunk'
 import { emitSyncChanges } from '../../lib/sync/sync-emit'
 
@@ -44,24 +44,35 @@ export async function batchUpdateTabGroupsHandler(c: Context<AppEnv>): Promise<R
     const ids = body.updates.map((u) => u.id)
     // D1 caps bound parameters at 100/query: 200 ids + user_id used to 500
     // before any write. Chunk the read-back and merge.
-    const rowById = new Map<string, { id: string; parent_id: string | null }>()
+    const rowById = new Map<string, { id: string; parent_id: string | null; is_locked: number }>()
     for (const chunk of chunkForD1In(ids, 1)) {
       const placeholders = chunk.map(() => '?').join(',')
       const { results: rows } = await db
-        .prepare(`SELECT id, parent_id FROM tab_groups WHERE id IN (${placeholders}) AND user_id = ?`)
+        .prepare(`SELECT id, parent_id, is_locked FROM tab_groups WHERE id IN (${placeholders}) AND user_id = ?`)
         .bind(...chunk, userId)
-        .all<{ id: string; parent_id: string | null }>()
+        .all<{ id: string; parent_id: string | null; is_locked: number }>()
       for (const row of rows || []) rowById.set(row.id, row)
     }
 
     const missing = ids.filter((id) => !rowById.has(id))
     if (missing.length > 0) return badRequest('Tab group not found')
 
+    // R8 BR-3/CA-2: locked groups reject all mutations except the unlock
+    // operation itself — the same invariant the single-group PATCH enforces.
+    // The web tree drag-reorder goes through this batch endpoint and used to
+    // bypass the lock entirely.
+    const locked = ids.filter((id) => rowById.get(id)?.is_locked)
+    if (locked.length > 0) return forbidden('Tab group is locked', 'RESOURCE_LOCKED')
+
     // 校验所有非空 parent 属于当前用户(跨用户 parent 会破坏树)。
     const parentIds = [...new Set(body.updates.map((u) => u.parent_id).filter((p): p is string => p != null))]
     for (const pid of parentIds) {
+      // R8 BR-1 同根因:已删(回收站中)的组不能作为新 parent——此前不查
+      // is_deleted,子组可以挂到树里不可见的已删组下面。
       const parent = await db
-        .prepare('SELECT id FROM tab_groups WHERE id = ? AND user_id = ?')
+        .prepare(
+          'SELECT id FROM tab_groups WHERE id = ? AND user_id = ? AND (is_deleted IS NULL OR is_deleted = 0)',
+        )
         .bind(pid, userId)
         .first<{ id: string }>()
       if (!parent) return badRequest('Parent tab group not found')

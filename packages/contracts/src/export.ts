@@ -13,6 +13,15 @@ export interface ExportBookmark {
   tags: string[]
   is_pinned: boolean
   is_archived?: boolean
+  /**
+   * R8 CA-3: these three were missing from the server export — the extension's
+   * local export/restore keeps them, but a JSON export was lossy: a private
+   * bookmark re-imported anywhere became public. Optional for backward
+   * compatibility with exports written before 1.3.0.
+   */
+  is_todo?: boolean
+  is_private?: boolean
+  position?: number
   created_at: string
   updated_at: string
   click_count?: number
@@ -109,4 +118,6 @@ export interface ExportOptions {
   }
 }
 
-export const EXPORT_VERSION = '1.2.0'
+// R8 CA-3: is_todo/is_private/position added; consumers treat them as
+// optional, so old exports stay importable.
+export const EXPORT_VERSION = '1.3.0'

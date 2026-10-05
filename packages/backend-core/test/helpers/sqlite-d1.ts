@@ -22,7 +22,8 @@ class SqliteD1Statement {
   constructor(
     private readonly db: SqliteDatabase,
     private readonly sql: string,
-    private readonly params: unknown[] = []
+    private readonly params: unknown[] = [],
+    private readonly acquire: () => Promise<() => void> = async () => () => {},
   ) {
     if (params.length > D1_MAX_BOUND_PARAMS) {
       throw new Error(
@@ -32,7 +33,7 @@ class SqliteD1Statement {
   }
 
   bind(...params: unknown[]): SqliteD1Statement {
-    return new SqliteD1Statement(this.db, this.sql, params)
+    return new SqliteD1Statement(this.db, this.sql, params, this.acquire)
   }
 
   private normalized(): unknown[] {
@@ -45,17 +46,27 @@ class SqliteD1Statement {
     })
   }
 
-  async first<T = Record<string, unknown>>(): Promise<T | null> {
+  private async gated<T>(fn: () => T): Promise<T> {
+    const release = await this.acquire()
+    try {
+      return fn()
+    } finally {
+      release()
+    }
+  }
+
+  /** Gate-free executors — batch() runs these inside its own held gate. */
+  rawFirst<T = Record<string, unknown>>(): T | null {
     const row = this.db.prepare(this.sql).get(...this.normalized())
     return (row as T) ?? null
   }
 
-  async all<T = Record<string, unknown>>(): Promise<{ results: T[]; success: true }> {
+  rawAll<T = Record<string, unknown>>(): { results: T[]; success: true } {
     const rows = this.db.prepare(this.sql).all(...this.normalized())
     return { results: rows as T[], success: true }
   }
 
-  async run(): Promise<{ success: true; meta: { changes: number; last_row_id: number } }> {
+  rawRun(): { success: true; meta: { changes: number; last_row_id: number } } {
     // `meta.changes` is load-bearing: the idempotency claim uses it to tell an
     // insert that landed from one that hit ON CONFLICT DO NOTHING.
     const result = this.db.prepare(this.sql).run(...this.normalized()) as {
@@ -70,47 +81,79 @@ class SqliteD1Statement {
       },
     }
   }
+
+  async first<T = Record<string, unknown>>(): Promise<T | null> {
+    return this.gated(() => this.rawFirst<T>())
+  }
+
+  async all<T = Record<string, unknown>>(): Promise<{ results: T[]; success: true }> {
+    return this.gated(() => this.rawAll<T>())
+  }
+
+  async run(): Promise<{ success: true; meta: { changes: number; last_row_id: number } }> {
+    return this.gated(() => this.rawRun())
+  }
+
+  /**
+   * Raw batch executor (R8 BT-1): real D1 batches return a D1Result per
+   * statement, and SELECT-like statements carry their rows in `.results` —
+   * the sync summary route reads `result?.results?.[0]`. The old harness ran
+   * every batched statement through rawRun(), dropping SELECT rows, so the
+   * summary route's SQL could only be "tested" through the memory mock that
+   * re-implements its aggregation in TypeScript.
+   */
+  rawExecute(): unknown {
+    if (/^\s*(SELECT|WITH)\b/i.test(this.sql)) return this.rawAll()
+    return this.rawRun()
+  }
 }
 
 class SqliteD1Database {
   constructor(readonly sqlite: SqliteDatabase) {}
 
-  prepare(sql: string): SqliteD1Statement {
-    return new SqliteD1Statement(this.sqlite, sql)
+  /**
+   * Serializes ALL statements — single and batch — mirroring apps/server's
+   * adapter. Real D1 runs each single statement as its own implicit
+   * transaction and batches atomically server-side; the old gate only
+   * covered batch↔batch, so a concurrent single-statement write landing
+   * inside an in-flight batch's BEGIN..COMMIT window was swept into its
+   * ROLLBACK — the caller already had `success`, so that is silent data
+   * loss the tests would never catch (R8 BL-6).
+   */
+  private opGate: Promise<void> = Promise.resolve()
+
+  private acquireGate(): Promise<() => void> {
+    const prev = this.opGate
+    let release!: () => void
+    this.opGate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    return prev.then(() => release)
   }
 
-  /**
-   * Serializes concurrent batches (mirrors apps/server's adapter): the
-   * BEGIN..COMMIT section spans await points on this shared connection, so
-   * a second batch interleaving its BEGIN would throw and its ROLLBACK
-   * could discard the first batch's writes. Sequential tests unaffected.
-   */
-  private batchGate: Promise<void> = Promise.resolve()
+  prepare(sql: string): SqliteD1Statement {
+    return new SqliteD1Statement(this.sqlite, sql, [], this.acquireGate.bind(this))
+  }
 
   async batch(statements: SqliteD1Statement[]): Promise<unknown[]> {
     // D1 batches are atomic; mirror that so a failing statement cannot leave
-    // half a batch applied and mask ordering bugs.
-    const release = this.batchGate
-    const run = (async () => {
-      await release
+    // half a batch applied and mask ordering bugs. Statements run gate-free
+    // (rawExecute) inside this one held gate.
+    const release = await this.acquireGate()
+    try {
       this.sqlite.exec('BEGIN')
-      try {
-        const results: unknown[] = []
-        for (const statement of statements) {
-          results.push(await statement.run())
-        }
-        this.sqlite.exec('COMMIT')
-        return results
-      } catch (error) {
-        this.sqlite.exec('ROLLBACK')
-        throw error
+      const results: unknown[] = []
+      for (const statement of statements) {
+        results.push(statement.rawExecute())
       }
-    })()
-    this.batchGate = run.then(
-      () => undefined,
-      () => undefined,
-    )
-    return run
+      this.sqlite.exec('COMMIT')
+      return results
+    } catch (error) {
+      this.sqlite.exec('ROLLBACK')
+      throw error
+    } finally {
+      release()
+    }
   }
 }
 

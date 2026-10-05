@@ -18,11 +18,12 @@ export async function permanentDeleteBookmark(db: D1Database, bookmarkId: string
       return { success: false, error: 'Bookmark not found in trash' }
     }
 
-    // FK clauses are declared in the schema but D1 does not enforce them the
-    // way local SQLite does (see sql/README.md); every delete path here
-    // removes children explicitly. Snapshot R2 keys are collected first:
-    // dropping only the rows would leak the objects forever
-    // (no listing/lifecycle rule exists).
+    // FK clauses are declared in the schema and D1 enforces them by default
+    // (equivalent to `PRAGMA foreign_keys = on`, R8 IN-1) — the local adapters
+    // and the test harness are aligned with that. Every delete path here
+    // removes children explicitly anyway, so it stays correct under either
+    // enforcement state. Snapshot R2 keys are collected first: dropping only
+    // the rows would leak the objects forever (no listing/lifecycle rule).
     const { results: snapshotRows } = await db
       .prepare('SELECT storage_key FROM bookmark_snapshots WHERE bookmark_id = ? AND user_id = ?')
       .bind(bookmarkId, userId)

@@ -31,8 +31,9 @@ info "Cloudflare 已授权"
 # ─── 第 2 步: 获取 Account ID ───
 echo ""
 echo "─── 第 2 步: 获取 Account ID ───"
-ACCOUNT_ID=$(npx wrangler whoami 2>&1 | grep -oP 'Account ID: \K[a-f0-9]{32}' | head -1)
-[ -z "$ACCOUNT_ID" ] && ACCOUNT_ID=$(npx wrangler whoami 2>&1 | grep -oP '[a-f0-9]{32}' | head -1)
+# BSD grep(macOS)不支持 -P(R8-M4)——用 sed BRE 提取,GNU/BSD 通用。
+ACCOUNT_ID=$(npx wrangler whoami 2>&1 | sed -n 's/.*Account ID: \([a-f0-9]\{32\}\).*/\1/p' | head -1)
+[ -z "$ACCOUNT_ID" ] && ACCOUNT_ID=$(npx wrangler whoami 2>&1 | grep -oE '[a-f0-9]{32}' | head -1)
 [ -z "$ACCOUNT_ID" ] && fail "无法获取 Account ID"
 info "Account ID: $ACCOUNT_ID"
 
@@ -75,14 +76,36 @@ if grep -q "<your-d1-database-id>" wrangler.toml; then
   info "database_id 已填入 wrangler.toml"
 fi
 
-# ─── 第 5 步: 创建 R2 桶（幂等）───
+# ─── 第 5 步: 创建 R2 桶（幂等；R2 未激活时自动降级部署）───
 echo ""
 echo "─── 第 5 步: 创建 R2 存储桶 ───"
+# R2 需在 Cloudflare Dashboard 手动激活(一次性,CLI 无法代办——code 10042)。
+# 未激活时带 [[r2_buckets]] 绑定 deploy 必失败,所以这里自动注释掉绑定段,
+# 以"无快照"降级模式完成部署(书签/标签/同步全部正常);激活 R2 后重跑
+# 本脚本会自动恢复绑定段。
+R2_BOUND=0
 if npx wrangler r2 bucket create tmarks-snapshots 2>/dev/null; then
   info "R2 存储桶已创建"
+  R2_BOUND=1
+elif npx wrangler r2 bucket list 2>/dev/null | grep -q "tmarks-snapshots"; then
+  info "R2 存储桶已存在"
+  R2_BOUND=1
+fi
+
+if [ "$R2_BOUND" -eq 1 ]; then
+  if grep -q '^# \[\[r2_buckets\]\]' wrangler.toml; then
+    sed -i.bak '/^# \[\[r2_buckets\]\]/,/^# bucket_name/ s/^# //' wrangler.toml
+    rm -f wrangler.toml.bak
+    info "R2 绑定段已恢复"
+  fi
 else
-  warn "R2 可能已存在或需要先在 Dashboard 激活 (https://dash.cloudflare.com → R2)"
-  warn "如果 R2 未激活，部署仍可运行（快照功能会优雅降级）"
+  warn "R2 未在 Dashboard 激活 (https://dash.cloudflare.com → R2 → Get Start，一次性)"
+  warn "自动切换为无 R2 降级部署: 快照功能暂不可用, 其余功能全部正常"
+  if grep -q '^\[\[r2_buckets\]\]' wrangler.toml; then
+    sed -i.bak '/^\[\[r2_buckets\]\]/,/^bucket_name/ s/^/# /' wrangler.toml
+    rm -f wrangler.toml.bak
+    info "已注释 wrangler.toml 的 R2 绑定段 (激活 R2 后重跑本脚本自动恢复)"
+  fi
 fi
 
 # ─── 第 6 步: 生成并设置 JWT 密钥 ───
@@ -118,7 +141,7 @@ echo ""
 echo "─── 第 9 步: 部署 ───"
 npx wrangler deploy --var ALLOW_REGISTRATION:true
 
-DEPLOY_URL=$(npx wrangler whoami 2>&1 | grep -oP 'https://\S+\.workers\.dev' | head -1)
+DEPLOY_URL=$(npx wrangler whoami 2>&1 | grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' | head -1)
 [ -z "$DEPLOY_URL" ] && DEPLOY_URL="查看上方 deploy 输出中的 URL"
 
 echo ""

@@ -76,8 +76,16 @@ export function TabCollectionView({ notify, error, success, loading, onDismissEr
     try {
       const result = await collectCurrentWindowTabs({ selectedTabIds: new Set(selected), ...opt })
       if (!result.success) { notify('error', t(result.error ?? 'popup.toast.collectFail')); return }
-      const collectedUrls = tabs.filter((tab) => tab.id != null && selected.has(tab.id) && tab.url).map((tab) => tab.url as string)
-      setSavedUrls((cur) => new Set([...cur, ...collectedUrls]))
+      // R8 TA-6: the popup writes IndexedDB directly, bypassing the SW-side
+      // Dexie hooks — fire SYNC_NOW (the save/import paths both do) so the
+      // write-behind push starts now instead of waiting for the 5-minute
+      // drain alarm, and the SW's collected-keys cache gets refreshed.
+      void chrome.runtime.sendMessage({ type: 'SYNC_NOW' }).catch(() => {})
+      // R8 TA-7: re-derive the saved set from the bookmark table — collection
+      // can also skip duplicates or only file tabs into groups, and marking
+      // those "saved bookmark" with the green dot was wrong.
+      const saved = await bookmarksByUrlKey()
+      setSavedUrls(new Set(tabs.filter((tab) => tab.url && saved.has(normalizeUrlKey(tab.url))).map((tab) => tab.url as string)))
       if (result.duplicate) notify('success', t('popup.toast.collectDup'))
       else if (opt.target_group_id) notify('success', t('popup.addedToGroup', { count: result.count ?? 0, skipped: result.skipped ?? 0 }))
       else notify('success', t('popup.collected', { count: result.count ?? 0, skipped: result.skipped ?? 0 }))

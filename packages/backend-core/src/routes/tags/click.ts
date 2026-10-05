@@ -1,6 +1,7 @@
 import type { Context } from 'hono'
 import type { AppEnv } from '../../lib/env'
 import { success, notFound, internalError } from '../../lib/response'
+import { emitSyncChange } from '../../lib/sync/sync-emit'
 
 /** PATCH /:id/click — increment a tag's click count. */
 export async function clickTagHandler(c: Context<AppEnv>): Promise<Response> {
@@ -26,6 +27,12 @@ export async function clickTagHandler(c: Context<AppEnv>): Promise<Response> {
     )
       .bind(now, now, tagId, userId)
       .run()
+
+    // R8 BT-7: the multi-line UPDATE stayed invisible to the structural
+    // sync-emit guard for months (its regex demanded `UPDATE tags SET` on one
+    // line) — the tag's click stats never reached the extension's incremental
+    // pull until its next 24h bootstrap.
+    await emitSyncChange(c.env.DB, userId, 'tag', tagId, 'upsert')
 
     return success({ message: 'Click count incremented' })
   } catch (error) {
